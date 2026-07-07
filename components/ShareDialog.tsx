@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Share2, Trash2 } from "lucide-react";
+import { Loader2, Share2, Trash2 } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import {

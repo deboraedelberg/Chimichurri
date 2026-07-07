@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { ChefHat, Loader2 } from "lucide-react";
+import { ChefHat, Loader2 } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import {

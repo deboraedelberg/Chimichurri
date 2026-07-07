@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ListChecks, Plus, Share2, UtensilsCrossed } from "lucide-react";
+import { ListChecks, Plus, Share2, UtensilsCrossed } from "@/components/icons";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";

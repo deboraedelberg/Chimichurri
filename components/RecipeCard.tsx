@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, Users, UtensilsCrossed } from "lucide-react";
+import { Clock, Users, UtensilsCrossed } from "@/components/icons";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";

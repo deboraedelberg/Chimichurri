@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, ImageIcon, Loader2, ScanText, X } from "lucide-react";
+import { Camera, ImageIcon, Loader2, ScanText, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Copy, Loader2, ShoppingBasket } from "lucide-react";
+import { Check, Copy, Loader2, ShoppingBasket } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import {

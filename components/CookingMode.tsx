@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ListChecks, Pause, Play, RotateCcw, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListChecks, Pause, Play, RotateCcw, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

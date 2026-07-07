@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { ChefHat, ListChecks, LogOut, Menu, UtensilsCrossed, User } from "lucide-react";
+import { ChefHat, ListChecks, LogOut, Menu, UtensilsCrossed, User } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import {

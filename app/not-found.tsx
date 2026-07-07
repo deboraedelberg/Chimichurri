@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChefHat } from "lucide-react";
+import { ChefHat } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 
