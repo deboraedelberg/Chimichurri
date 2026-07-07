@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(cuid())
+  name     String?
+  email    String? @unique
+  password String? // hashed with bcrypt
+  provider String? // "google" or "credentials"
+  image    String?
+
+  recipes        Recipe[]
+  sharesSent     RecipeShare[] @relation("Owner")
+  sharesReceived RecipeShare[] @relation("SharedWith")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Recipe {
+  id      String @id @default(cuid())
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  photo_url   String?
+
+  ingredients Ingredient[]
+  steps       Step[]
+
+  servings Int  @default(4)
+  prepTime Int? // minutes
+  cookTime Int? // minutes
+
+  tags String[] @default([])
+
+  shares RecipeShare[] @relation("RecipeOwner")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([user_id])
+}
+
+model Ingredient {
+  id        String @id @default(cuid())
+  recipe_id String
+  recipe    Recipe @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  item   String
+  amount Float
+  unit   String
+
+  @@index([recipe_id])
+}
+
+model Step {
+  id        String @id @default(cuid())
+  recipe_id String
+  recipe    Recipe @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  order   Int
+  content String
+  time    Int? // seconds
+
+  @@index([recipe_id])
+}
+
+model RecipeShare {
+  id        String @id @default(cuid())
+  recipe_id String
+  recipe    Recipe @relation("RecipeOwner", fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  shared_with_id String
+  shared_with    User   @relation("SharedWith", fields: [shared_with_id], references: [id], onDelete: Cascade)
+
+  owner_id String
+  owner    User   @relation("Owner", fields: [owner_id], references: [id], onDelete: Cascade)
+
+  permission String @default("view") // "view" or "edit"
+
+  shared_at DateTime @default(now())
+
+  @@unique([recipe_id, shared_with_id])
+  @@index([recipe_id])
+  @@index([shared_with_id])
+}

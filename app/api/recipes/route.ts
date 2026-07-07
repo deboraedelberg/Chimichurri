@@ -1,0 +1,68 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { recipeSchema, RECIPE_INCLUDE } from "@/lib/recipes";
+
+export async function GET(req: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const q = searchParams.get("q")?.trim();
+
+  const recipes = await prisma.recipe.findMany({
+    where: {
+      user_id: session.user.id,
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { tags: { has: q.toLowerCase() } },
+            ],
+          }
+        : {}),
+    },
+    include: RECIPE_INCLUDE,
+    orderBy: { updatedAt: "desc" },
+  });
+
+  return NextResponse.json(recipes);
+}
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const parsed = recipeSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0]?.message ?? "Datos inválidos" },
+      { status: 400 }
+    );
+  }
+
+  const { ingredients, steps, ...data } = parsed.data;
+
+  const recipe = await prisma.recipe.create({
+    data: {
+      ...data,
+      user_id: session.user.id,
+      ingredients: { create: ingredients },
+      steps: {
+        create: steps.map((s, i) => ({
+          order: i + 1,
+          content: s.content,
+          time: s.time ?? null,
+        })),
+      },
+    },
+    include: RECIPE_INCLUDE,
+  });
+
+  return NextResponse.json(recipe, { status: 201 });
+}
