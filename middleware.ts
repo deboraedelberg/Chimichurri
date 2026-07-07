@@ -1,12 +1,18 @@
-export { default } from "next-auth/middleware";
+import { withAuth } from "next-auth/middleware";
+
+export default withAuth({
+  pages: {
+    signIn: "/auth/signin",
+  },
+});
 
 export const config = {
   matcher: [
     /*
-     * Protect everything except:
-     * - /auth/* (sign in / sign up pages)
-     * - /api/auth/* (NextAuth + signup endpoints)
-     * - Next.js internals and static assets
+     * Protege todo excepto:
+     * - /auth/* (páginas de inicio de sesión / registro)
+     * - /api/auth/* (NextAuth + registro)
+     * - Archivos internos y estáticos de Next.js
      */
     "/((?!auth|api/auth|_next/static|_next/image|favicon.ico|icon.svg).*)",
   ],
