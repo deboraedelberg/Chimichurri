@@ -43,6 +43,14 @@ import {
 import { cn } from "@/lib/utils";
 
 export const DEFAULT_SERVINGS_KEY = "chimichurri:defaultServings";
+export const UNIT_SYSTEM_KEY = "chimichurri:unitSystem";
+
+export type UnitSystem = "metric" | "imperial";
+
+/** Unidad inicial para ingredientes nuevos según el sistema elegido. */
+export function defaultUnitFor(system: string | null): string {
+  return system === "imperial" ? "oz" : "g";
+}
 
 const THEME_OPTIONS = [
   { value: "light", label: "Claro", icon: Sun },
@@ -72,9 +80,14 @@ export function SettingsSections({ name: initialName, email, provider }: Setting
 
   // Preferencias de cocina
   const [defaultServings, setDefaultServings] = useState("4");
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>("metric");
   useEffect(() => {
-    const stored = localStorage.getItem(DEFAULT_SERVINGS_KEY);
-    if (stored) setDefaultServings(stored);
+    const storedServings = localStorage.getItem(DEFAULT_SERVINGS_KEY);
+    if (storedServings) setDefaultServings(storedServings);
+    const storedUnits = localStorage.getItem(UNIT_SYSTEM_KEY);
+    if (storedUnits === "metric" || storedUnits === "imperial") {
+      setUnitSystem(storedUnits);
+    }
   }, []);
 
   // Eliminar cuenta
@@ -108,6 +121,11 @@ export function SettingsSections({ name: initialName, email, provider }: Setting
   function saveDefaultServings(value: string) {
     setDefaultServings(value);
     localStorage.setItem(DEFAULT_SERVINGS_KEY, value);
+  }
+
+  function saveUnitSystem(value: UnitSystem) {
+    setUnitSystem(value);
+    localStorage.setItem(UNIT_SYSTEM_KEY, value);
   }
 
   async function deleteAccount() {
@@ -193,7 +211,7 @@ export function SettingsSections({ name: initialName, email, provider }: Setting
           <CardTitle className="text-lg">Preferencias de cocina</CardTitle>
           <CardDescription>Se guardan en este navegador.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium">Porciones por defecto</p>
@@ -211,6 +229,27 @@ export function SettingsSections({ name: initialName, email, provider }: Setting
                     {n}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Unidades por defecto</p>
+              <p className="text-sm text-muted-foreground">
+                Sistema con el que arrancan los ingredientes nuevos.
+              </p>
+            </div>
+            <Select
+              value={unitSystem}
+              onValueChange={(v) => saveUnitSystem(v as UnitSystem)}
+            >
+              <SelectTrigger className="w-44" aria-label="Unidades por defecto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="metric">Métricas (g, ml)</SelectItem>
+                <SelectItem value="imperial">Imperiales (oz, tazas)</SelectItem>
               </SelectContent>
             </Select>
           </div>

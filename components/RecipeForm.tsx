@@ -19,7 +19,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { URLImporter } from "@/components/URLImporter";
 import { UNITS } from "@/lib/conversions";
-import { DEFAULT_SERVINGS_KEY } from "@/components/SettingsSections";
+import {
+  DEFAULT_SERVINGS_KEY,
+  UNIT_SYSTEM_KEY,
+  defaultUnitFor,
+} from "@/components/SettingsSections";
 import type { RecipeDTO } from "@/lib/types";
 
 interface IngredientRow {
@@ -68,12 +72,21 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [defaultUnit, setDefaultUnit] = useState("g");
 
-  // En recetas nuevas, arrancar con las porciones por defecto de Configuración
+  // En recetas nuevas, aplicar las preferencias de Configuración
+  // (porciones y sistema de unidades por defecto)
   useEffect(() => {
+    const unit = defaultUnitFor(localStorage.getItem(UNIT_SYSTEM_KEY));
+    setDefaultUnit(unit);
     if (mode !== "create") return;
-    const stored = localStorage.getItem(DEFAULT_SERVINGS_KEY);
-    if (stored) setServings(stored);
+    const storedServings = localStorage.getItem(DEFAULT_SERVINGS_KEY);
+    if (storedServings) setServings(storedServings);
+    setIngredients((rows) =>
+      rows.map((row) =>
+        row.item === "" && row.amount === "" ? { ...row, unit } : row
+      )
+    );
   }, [mode]);
 
   function updateIngredient(index: number, patch: Partial<IngredientRow>) {
@@ -296,7 +309,7 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
             variant="outline"
             size="sm"
             onClick={() =>
-              setIngredients((rows) => [...rows, { item: "", amount: "", unit: "g" }])
+              setIngredients((rows) => [...rows, { item: "", amount: "", unit: defaultUnit }])
             }
           >
             <Plus />

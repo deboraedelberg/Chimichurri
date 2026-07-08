@@ -64,14 +64,29 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Mobile nav */}
+          {/* Menú mobile: todo junto — navegación + cuenta */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon" aria-label="Menú">
                 <Menu className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 md:hidden">
+            <DropdownMenuContent align="end" className="w-56 md:hidden">
+              {session?.user && (
+                <>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {session.user.name ?? "Chef"}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {session.user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               {NAV_LINKS.map(({ href, label, icon: Icon }) => (
                 <DropdownMenuItem key={href} asChild>
                   <Link href={href}>
@@ -80,13 +95,36 @@ export function Navbar() {
                   </Link>
                 </DropdownMenuItem>
               ))}
+              {session?.user && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                      <Settings />
+                      Configuración
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => signOut({ callbackUrl: "/auth/signin" })}
+                  >
+                    <LogOut />
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Avatar con menú de cuenta: solo en desktop (en mobile va todo en la hamburguesa) */}
           {session?.user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Cuenta" className="rounded-full">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Cuenta"
+                  className="hidden rounded-full md:inline-flex"
+                >
                   {session.user.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
