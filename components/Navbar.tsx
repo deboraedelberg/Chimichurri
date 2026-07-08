@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { ChefHat, ListChecks, LogOut, Menu, UtensilsCrossed, User } from "@/components/icons";
+import {
+  ChefHat,
+  ListChecks,
+  LogOut,
+  Menu,
+  Settings,
+  User,
+  UtensilsCrossed,
+} from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -112,6 +120,12 @@ export function Navbar() {
                   <Link href="/recipes">
                     <User />
                     Mis recetas
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <Settings />
+                    Configuración
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

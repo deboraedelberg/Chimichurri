@@ -1,6 +1,7 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AiScanIcon,
+  Alert02Icon,
   ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -18,14 +19,17 @@ import {
   Loading03Icon,
   Logout03Icon,
   Menu01Icon,
+  Moon02Icon,
   PauseIcon,
   PencilEdit01Icon,
   PlayIcon,
   PlusSignIcon,
   RotateClockwiseIcon,
+  Settings01Icon,
   Share08Icon,
   ShoppingBasket01Icon,
   SpoonAndForkIcon,
+  Sun01Icon,
   Tick02Icon,
   UserGroupIcon,
   UserIcon,
@@ -79,3 +83,7 @@ export const Copy = make(Copy01Icon);
 export const Pause = make(PauseIcon);
 export const Play = make(PlayIcon);
 export const RotateCcw = make(RotateClockwiseIcon);
+export const Settings = make(Settings01Icon);
+export const Sun = make(Sun01Icon);
+export const Moon = make(Moon02Icon);
+export const AlertTriangle = make(Alert02Icon);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "@/components/icons";
 
@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { URLImporter } from "@/components/URLImporter";
 import { UNITS } from "@/lib/conversions";
+import { DEFAULT_SERVINGS_KEY } from "@/components/SettingsSections";
 import type { RecipeDTO } from "@/lib/types";
 
 interface IngredientRow {
@@ -67,6 +68,13 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // En recetas nuevas, arrancar con las porciones por defecto de Configuración
+  useEffect(() => {
+    if (mode !== "create") return;
+    const stored = localStorage.getItem(DEFAULT_SERVINGS_KEY);
+    if (stored) setServings(stored);
+  }, [mode]);
 
   function updateIngredient(index: number, patch: Partial<IngredientRow>) {
     setIngredients((rows) =>

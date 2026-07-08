@@ -69,20 +69,29 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, user }) {
-      if (user?.email) {
-        // On sign-in, resolve the database id (Google users get a fresh cuid, not the OAuth sub)
+    async jwt({ token, user, trigger }) {
+      // Al iniciar sesión, resolver el id de la base (los usuarios de Google
+      // reciben un cuid propio, no el sub de OAuth). Con trigger "update"
+      // (update() de useSession), re-leer el nombre desde la base.
+      const email = user?.email ?? (trigger === "update" ? token.email : null);
+      if (email) {
         const dbUser = await prisma.user.findUnique({
-          where: { email: user.email.toLowerCase() },
-          select: { id: true },
+          where: { email: email.toLowerCase() },
+          select: { id: true, name: true },
         });
-        token.id = dbUser?.id ?? user.id;
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.name = dbUser.name;
+        } else if (user) {
+          token.id = user.id;
+        }
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id;
+      if (session.user) {
+        if (token.id) session.user.id = token.id;
+        if (token.name !== undefined) session.user.name = token.name;
       }
       return session;
     },
