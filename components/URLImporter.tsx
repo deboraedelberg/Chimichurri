@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link2 } from "@/components/icons";
+import { Link2, Loader2 } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,32 +16,71 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { ImportedRecipe } from "@/lib/import";
 
 interface URLImporterProps {
-  /** Receives the source URL and the pasted recipe text */
-  onImport: (payload: { url: string; text: string }) => void;
+  /** Receta parseada automáticamente — precarga el formulario */
+  onRecipe: (recipe: ImportedRecipe) => void;
+  /** Fallback manual: URL + texto pegado van a las notas */
+  onManual: (payload: { url: string; text: string }) => void;
 }
 
 /**
- * MVP URL import: no automated scraping.
- * The user pastes the URL for reference, opens the page themselves,
- * copies the recipe text, and pastes it here. The text lands in the
- * form notes so they can fill in the structured fields.
+ * Importar desde URL: descarga la página vía /api/import y extrae la
+ * receta de los datos estructurados (schema.org). Si el sitio no los
+ * publica, se abre el modo manual para copiar y pegar el texto.
  */
-export function URLImporter({ onImport }: URLImporterProps) {
+export function URLImporter({ onRecipe, onManual }: URLImporterProps) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [manualMode, setManualMode] = useState(false);
 
-  function handleImport() {
-    onImport({ url: url.trim(), text: text.trim() });
-    setOpen(false);
+  function reset() {
     setUrl("");
     setText("");
+    setError(null);
+    setManualMode(false);
+    setImporting(false);
+  }
+
+  async function handleImport() {
+    setImporting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo importar la receta");
+      onRecipe(data as ImportedRecipe);
+      setOpen(false);
+      reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo importar la receta");
+      setManualMode(true);
+      setImporting(false);
+    }
+  }
+
+  function handleManual() {
+    onManual({ url: url.trim(), text: text.trim() });
+    setOpen(false);
+    reset();
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) reset();
+      }}
+    >
       <DialogTrigger asChild>
         <Button type="button" variant="outline" size="sm">
           <Link2 />
@@ -52,50 +91,76 @@ export function URLImporter({ onImport }: URLImporterProps) {
         <DialogHeader>
           <DialogTitle>Importar desde un sitio web</DialogTitle>
           <DialogDescription>
-            Pega la URL de la receta, luego abre la página y copia el texto de la receta abajo.
-            Los campos los completas tú — la importación automática llegará más adelante.
+            Pega la URL de la receta y la importamos automáticamente: nombre,
+            ingredientes, pasos, tiempos y foto.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="import-url">URL de la receta</Label>
-            <Input
-              id="import-url"
-              type="url"
-              placeholder="https://ejemplo.com/las-mejores-empanadas"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-            {url.trim() && (
-              <a
-                href={url.trim()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-primary underline underline-offset-4"
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                id="import-url"
+                type="url"
+                placeholder="https://ejemplo.com/las-mejores-empanadas"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && url.trim() && !importing) {
+                    e.preventDefault();
+                    handleImport();
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={handleImport}
+                disabled={!url.trim() || importing}
               >
-                Abrir la página en una pestaña nueva ↗
-              </a>
-            )}
+                {importing && <Loader2 className="animate-spin" />}
+                {importing ? "Importando…" : "Importar"}
+              </Button>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="import-text">Texto de la receta (copiado de la página)</Label>
-            <Textarea
-              id="import-text"
-              rows={10}
-              placeholder={"Ingredientes:\n- 2 tazas de harina\n…\n\nPasos:\n1. Mezcla los ingredientes secos\n…"}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          {manualMode && (
+            <div className="space-y-2">
+              <Label htmlFor="import-text">
+                Plan B: copia el texto de la receta y pégalo acá
+              </Label>
+              <Textarea
+                id="import-text"
+                rows={8}
+                placeholder={"Ingredientes:\n- 2 tazas de harina\n…\n\nPasos:\n1. Mezcla los ingredientes secos\n…"}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+              {url.trim() && (
+                <a
+                  href={url.trim()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary underline underline-offset-4"
+                >
+                  Abrir la página en una pestaña nueva ↗
+                </a>
+              )}
+            </div>
+          )}
         </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={handleImport} disabled={!text.trim() && !url.trim()}>
-            Agregar a las notas
-          </Button>
-        </DialogFooter>
+        {manualMode && (
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleManual} disabled={!text.trim()}>
+              Agregar a las notas
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

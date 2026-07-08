@@ -24,6 +24,7 @@ import {
   UNIT_SYSTEM_KEY,
   defaultUnitFor,
 } from "@/components/SettingsSections";
+import type { ImportedRecipe } from "@/lib/import";
 import type { RecipeDTO } from "@/lib/types";
 
 interface IngredientRow {
@@ -103,6 +104,29 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
     setNotes((prev) => (prev ? `${prev}\n\n${text}` : text));
   }
 
+  /** Precarga el formulario con una receta importada desde una URL */
+  function applyImported(recipe: ImportedRecipe) {
+    if (recipe.name) setName(recipe.name);
+    if (recipe.description) setDescription(recipe.description);
+    if (recipe.image) setPhotoUrl(recipe.image);
+    if (recipe.servings) setServings(String(recipe.servings));
+    if (recipe.prepTime) setPrepTime(String(recipe.prepTime));
+    if (recipe.cookTime) setCookTime(String(recipe.cookTime));
+    if (recipe.ingredients.length > 0) {
+      setIngredients(
+        recipe.ingredients.map((i) => ({
+          item: i.item,
+          amount: String(i.amount),
+          unit: i.unit,
+        }))
+      );
+    }
+    if (recipe.steps.length > 0) {
+      setSteps(recipe.steps.map((content) => ({ content, minutes: "" })));
+    }
+    appendNotes(`Fuente: ${recipe.sourceUrl}`);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -159,7 +183,8 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="text-lg">Información básica</CardTitle>
           <URLImporter
-            onImport={({ url, text }) => {
+            onRecipe={applyImported}
+            onManual={({ url, text }) => {
               const parts = [url && `Fuente: ${url}`, text].filter(Boolean);
               if (parts.length) appendNotes(parts.join("\n\n"));
             }}
