@@ -20,6 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { IngredientList } from "@/components/IngredientList";
 import { ScalingControl } from "@/components/ScalingControl";
+import { categoryLabel } from "@/lib/categories";
 import { formatMinutes } from "@/lib/utils";
 import type { RecipeDTO } from "@/lib/types";
 
@@ -95,8 +96,16 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
         )}
 
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          {recipe.owner && (
-            <span>De {recipe.owner.name ?? recipe.owner.email}</span>
+          {categoryLabel(recipe.category) && (
+            <Badge variant="secondary">{categoryLabel(recipe.category)}</Badge>
+          )}
+          {recipe.credit ? (
+            <span>
+              Receta de {recipe.credit}
+              {recipe.owner?.name && ` · cargada por ${recipe.owner.name.split(" ")[0]}`}
+            </span>
+          ) : (
+            recipe.owner && <span>De {recipe.owner.name ?? recipe.owner.email}</span>
           )}
           {recipe.prepTime != null && recipe.prepTime > 0 && (
             <span className="flex items-center gap-1">
@@ -138,6 +147,7 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
               baseServings={recipe.servings}
               servings={servings}
               onChange={setServings}
+              unitLabel={recipe.servings_unit}
             />
           </CardHeader>
           <CardContent>

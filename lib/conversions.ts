@@ -37,6 +37,7 @@ export const UNITS: Record<string, UnitDef> = {
 
   // count-ish units — never converted, only scaled
   unit: { key: "unit", label: "unidad", dimension: "count", toBase: 1 },
+  cn: { key: "cn", label: "c/n", dimension: "count", toBase: 1 }, // cantidad necesaria / a gusto
   pinch: { key: "pinch", label: "pizca", dimension: "count", toBase: 1 },
   clove: { key: "clove", label: "diente", dimension: "count", toBase: 1 },
   slice: { key: "slice", label: "rebanada", dimension: "count", toBase: 1 },

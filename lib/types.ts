@@ -38,7 +38,10 @@ export interface RecipeDTO {
   name: string;
   description: string | null;
   photo_url: string | null;
+  category: string | null;
+  credit: string | null;
   servings: number;
+  servings_unit: string;
   prepTime: number | null;
   cookTime: number | null;
   tags: string[];

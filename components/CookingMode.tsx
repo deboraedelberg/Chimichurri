@@ -145,10 +145,19 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
                           checked[ing.id] && "text-muted-foreground line-through"
                         )}
                       >
-                        <span className="font-medium tabular-nums">
-                          {formatAmount(ing.amount)} {UNITS[ing.unit]?.label ?? ing.unit}
-                        </span>{" "}
-                        {ing.item}
+                        {ing.unit === "cn" ? (
+                          <>
+                            {ing.item}{" "}
+                            <span className="text-muted-foreground">· c/n</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-medium tabular-nums">
+                              {formatAmount(ing.amount)} {UNITS[ing.unit]?.label ?? ing.unit}
+                            </span>{" "}
+                            {ing.item}
+                          </>
+                        )}
                       </label>
                     </li>
                   ))}

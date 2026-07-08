@@ -1,24 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { OCRImporter } from "@/components/OCRImporter";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { URLImporter } from "@/components/URLImporter";
 import { UNITS } from "@/lib/conversions";
+import { CATEGORY_GROUPS } from "@/lib/categories";
 import {
   DEFAULT_SERVINGS_KEY,
   UNIT_SYSTEM_KEY,
@@ -35,23 +40,49 @@ interface IngredientRow {
 
 interface StepRow {
   content: string;
-  minutes: string; // optional timer, in minutes for input convenience
+  minutes: string; // temporizador opcional, en minutos
 }
 
 interface RecipeFormProps {
   mode: "create" | "edit";
   initial?: RecipeDTO;
+  /** Etiquetas ya usadas en el recetario, para las sugerencias */
+  knownTags?: string[];
 }
 
 const UNIT_OPTIONS = Object.values(UNITS);
 
-export function RecipeForm({ mode, initial }: RecipeFormProps) {
+const CURATED_TAGS = [
+  "comida judía",
+  "desayuno",
+  "merienda",
+  "cumpleaños",
+  "rosh hashaná",
+  "pésaj",
+  "rápida",
+  "sin horno",
+  "vegetariana",
+];
+
+/** Sugerencias según el nombre de la receta ("knishes" → comida judía) */
+const TAG_HINTS: [RegExp, string][] = [
+  [/knish|mandlen|jal[aá]|guefilte|varenike|latke|kneidalaj|leikaj/i, "comida judía"],
+  [/cumplea|bizcochuelo/i, "cumpleaños"],
+  [/mate|bizcochito|masita/i, "merienda"],
+];
+
+const MAX_TAG_SUGGESTIONS = 8;
+
+export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
   const router = useRouter();
 
+  const [category, setCategory] = useState(initial?.category ?? "");
   const [name, setName] = useState(initial?.name ?? "");
+  const [credit, setCredit] = useState(initial?.credit ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [photoUrl, setPhotoUrl] = useState<string | null>(initial?.photo_url ?? null);
   const [servings, setServings] = useState(String(initial?.servings ?? 4));
+  const [servingsUnit, setServingsUnit] = useState(initial?.servings_unit ?? "porciones");
   const [prepTime, setPrepTime] = useState(initial?.prepTime ? String(initial.prepTime) : "");
   const [cookTime, setCookTime] = useState(initial?.cookTime ? String(initial.cookTime) : "");
   const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
@@ -76,7 +107,6 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
   const [defaultUnit, setDefaultUnit] = useState("g");
 
   // En recetas nuevas, aplicar las preferencias de Configuración
-  // (porciones y sistema de unidades por defecto)
   useEffect(() => {
     const unit = defaultUnitFor(localStorage.getItem(UNIT_SYSTEM_KEY));
     setDefaultUnit(unit);
@@ -89,6 +119,30 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
       )
     );
   }, [mode]);
+
+  // Etiquetas elegidas (parseadas del input) y sugerencias
+  const selectedTags = useMemo(
+    () =>
+      tags
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean),
+    [tags]
+  );
+
+  const tagSuggestions = useMemo(() => {
+    const hints = TAG_HINTS.filter(([re]) => re.test(name)).map(([, tag]) => tag);
+    const all = [...hints, ...knownTags.map((t) => t.toLowerCase()), ...CURATED_TAGS];
+    const unique: string[] = [];
+    for (const tag of all) {
+      if (!selectedTags.includes(tag) && !unique.includes(tag)) unique.push(tag);
+    }
+    return unique.slice(0, MAX_TAG_SUGGESTIONS);
+  }, [name, knownTags, selectedTags]);
+
+  function addTag(tag: string) {
+    setTags((prev) => (prev.trim() ? `${prev.replace(/,\s*$/, "")}, ${tag}` : tag));
+  }
 
   function updateIngredient(index: number, patch: Partial<IngredientRow>) {
     setIngredients((rows) =>
@@ -136,18 +190,18 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
       name: name.trim(),
       description: description.trim() || null,
       photo_url: photoUrl,
+      category: category || null,
+      credit: credit.trim() || null,
       servings: Number(servings) || 4,
+      servings_unit: servingsUnit,
       prepTime: prepTime ? Number(prepTime) : null,
       cookTime: cookTime ? Number(cookTime) : null,
-      tags: tags
-        .split(",")
-        .map((t) => t.trim().toLowerCase())
-        .filter(Boolean),
+      tags: selectedTags,
       ingredients: ingredients
         .filter((row) => row.item.trim())
         .map((row) => ({
           item: row.item.trim(),
-          amount: Number(row.amount) || 0,
+          amount: row.unit === "cn" ? 1 : Number(row.amount) || 0,
           unit: row.unit,
         })),
       steps: steps
@@ -180,17 +234,43 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-lg">Información básica</CardTitle>
-          <URLImporter
-            onRecipe={applyImported}
-            onManual={({ url, text }) => {
-              const parts = [url && `Fuente: ${url}`, text].filter(Boolean);
-              if (parts.length) appendNotes(parts.join("\n\n"));
-            }}
-          />
+        <CardHeader className="gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-lg">Información básica</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              <URLImporter
+                onRecipe={applyImported}
+                onManual={({ url, text }) => {
+                  const parts = [url && `Fuente: ${url}`, text].filter(Boolean);
+                  if (parts.length) appendNotes(parts.join("\n\n"));
+                }}
+              />
+              <OCRImporter onTextExtracted={appendNotes} />
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="recipe-category">Categoría</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="recipe-category" aria-label="Categoría">
+                <SelectValue placeholder="Elegir categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_GROUPS.map((group) => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.items.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="recipe-name">Nombre *</Label>
             <Input
@@ -203,7 +283,18 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipe-description">Descripción</Label>
+            <Label htmlFor="recipe-credit">Receta de (opcional)</Label>
+            <Input
+              id="recipe-credit"
+              placeholder="la Babe Teresa, la tía Susy…"
+              maxLength={100}
+              value={credit}
+              onChange={(e) => setCredit(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="recipe-description">Descripción (opcional)</Label>
             <Textarea
               id="recipe-description"
               placeholder="Crujientes por fuera, jugosas por dentro…"
@@ -213,9 +304,9 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="space-y-2">
-              <Label htmlFor="recipe-servings">Porciones</Label>
+              <Label htmlFor="recipe-servings">Rinde</Label>
               <Input
                 id="recipe-servings"
                 type="number"
@@ -224,6 +315,20 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
                 value={servings}
                 onChange={(e) => setServings(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="recipe-servings-unit" className="sm:invisible sm:block">
+                &nbsp;
+              </Label>
+              <Select value={servingsUnit} onValueChange={setServingsUnit}>
+                <SelectTrigger id="recipe-servings-unit" aria-label="Tipo de rinde">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="porciones">Porciones</SelectItem>
+                  <SelectItem value="unidades">Unidades</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="recipe-prep">Preparación (min)</Label>
@@ -253,19 +358,29 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
             <Label htmlFor="recipe-tags">Etiquetas (separadas por comas)</Label>
             <Input
               id="recipe-tags"
-              placeholder="argentina, cena, familia"
+              placeholder="comida judía, merienda, rápida"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
             />
+            {tagSuggestions.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {tagSuggestions.map((tag) => (
+                  <button key={tag} type="button" onClick={() => addTag(tag)}>
+                    <Badge
+                      variant="outline"
+                      className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                    >
+                      + {tag}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label>Foto</Label>
-            <PhotoUploader
-              photoUrl={photoUrl}
-              onPhotoChange={setPhotoUrl}
-              onTextExtracted={appendNotes}
-            />
+            <PhotoUploader photoUrl={photoUrl} onPhotoChange={setPhotoUrl} />
           </div>
         </CardContent>
       </Card>
@@ -293,8 +408,9 @@ export function RecipeForm({ mode, initial }: RecipeFormProps) {
                   type="number"
                   step="any"
                   min={0}
-                  placeholder="500"
-                  value={row.amount}
+                  placeholder={row.unit === "cn" ? "—" : "500"}
+                  disabled={row.unit === "cn"}
+                  value={row.unit === "cn" ? "" : row.amount}
                   onChange={(e) => updateIngredient(i, { amount: e.target.value })}
                 />
               </div>

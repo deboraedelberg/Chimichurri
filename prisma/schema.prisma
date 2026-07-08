@@ -31,13 +31,16 @@ model Recipe {
   name        String
   description String?
   photo_url   String?
+  category    String? // slug, ej. "dulce-tortas" (ver lib/categories.ts)
+  credit      String? // "Receta de…" (la Babe Teresa, la tía Susy)
 
   ingredients Ingredient[]
   steps       Step[]
 
-  servings Int  @default(4)
-  prepTime Int? // minutes
-  cookTime Int? // minutes
+  servings      Int    @default(4)
+  servings_unit String @default("porciones") // "porciones" | "unidades"
+  prepTime      Int? // minutes
+  cookTime      Int? // minutes
 
   tags String[] @default([])
 

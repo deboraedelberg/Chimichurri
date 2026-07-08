@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { CATEGORY_VALUES } from "@/lib/categories";
 
 export const ingredientSchema = z.object({
   item: z.string().trim().min(1, "El nombre del ingrediente es obligatorio").max(200),
@@ -16,7 +17,10 @@ export const recipeSchema = z.object({
   name: z.string().trim().min(1, "El nombre es obligatorio").max(200),
   description: z.string().trim().max(2000).nullish(),
   photo_url: z.string().trim().url().nullish().or(z.literal("").transform(() => null)),
+  category: z.enum(CATEGORY_VALUES).nullish(),
+  credit: z.string().trim().max(100).nullish().or(z.literal("").transform(() => null)),
   servings: z.coerce.number().int().min(1).max(100).default(4),
+  servings_unit: z.enum(["porciones", "unidades"]).default("porciones"),
   prepTime: z.coerce.number().int().min(0).max(6000).nullish(),
   cookTime: z.coerce.number().int().min(0).max(6000).nullish(),
   tags: z.array(z.string().trim().min(1).max(50)).max(20).default([]),

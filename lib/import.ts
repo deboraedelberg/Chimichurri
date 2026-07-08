@@ -122,6 +122,12 @@ export function parseIngredient(raw: string): ImportedIngredient | null {
   const text = cleanText(raw);
   if (!text) return null;
 
+  // "Harina leudante, cantidad necesaria" / "Sal, c/n" / "Pimienta a gusto" -> unidad C/N
+  const cn = text.match(/^(.*?)[,:\s]*(?:\bcantidad necesaria\b|c\/n|\ba gusto\b)[.\s]*$/i);
+  if (cn && cn[1].trim()) {
+    return { item: cn[1].trim().replace(/[,:]$/, ""), amount: 1, unit: "cn" };
+  }
+
   const tokens = text.split(/\s+/);
   let amount: number | null = null;
   let index = 0;

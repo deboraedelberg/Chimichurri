@@ -22,16 +22,21 @@ export default async function EditRecipePage({
   if (!permission) notFound();
   if (permission === "view") redirect(`/recipes/${params.id}`);
 
-  const recipe = await prisma.recipe.findUnique({
-    where: { id: params.id },
-    include: RECIPE_INCLUDE,
-  });
+  const [recipe, tagRows] = await Promise.all([
+    prisma.recipe.findUnique({
+      where: { id: params.id },
+      include: RECIPE_INCLUDE,
+    }),
+    prisma.recipe.findMany({ select: { tags: true } }),
+  ]);
   if (!recipe) notFound();
+
+  const knownTags = Array.from(new Set(tagRows.flatMap((r) => r.tags)));
 
   return (
     <main className="container max-w-3xl space-y-6 py-8">
       <h1 className="text-3xl font-bold tracking-tight">Editar receta</h1>
-      <RecipeForm mode="edit" initial={toRecipeDTO(recipe, permission)} />
+      <RecipeForm mode="edit" initial={toRecipeDTO(recipe, permission)} knownTags={knownTags} />
     </main>
   );
 }

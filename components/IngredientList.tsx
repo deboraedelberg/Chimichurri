@@ -31,6 +31,16 @@ export function IngredientList({ ingredients, multiplier }: IngredientListProps)
   return (
     <ul className="space-y-3">
       {ingredients.map((ing) => {
+        // C/N ("cantidad necesaria"): sin número, no escala ni convierte
+        if (ing.unit === "cn") {
+          return (
+            <li key={ing.id} className="flex items-center justify-between gap-3">
+              <span className="min-w-0 flex-1">{ing.item}</span>
+              <span className="shrink-0 text-muted-foreground">c/n</span>
+            </li>
+          );
+        }
+
         const displayUnit = unitOverrides[ing.id] ?? ing.unit;
         const converted = convert(ing.amount * multiplier, ing.unit, displayUnit);
         const amount = converted ?? ing.amount * multiplier;

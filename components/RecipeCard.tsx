@@ -3,11 +3,13 @@ import { Clock, User, Users, UtensilsCrossed } from "@/components/icons";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { categoryShortLabel } from "@/lib/categories";
 import { formatMinutes } from "@/lib/utils";
 import type { RecipeDTO } from "@/lib/types";
 
 export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
   const totalTime = (recipe.prepTime ?? 0) + (recipe.cookTime ?? 0);
+  const category = categoryShortLabel(recipe.category);
 
   return (
     <Link href={`/recipes/${recipe.id}`} className="group block">
@@ -26,6 +28,11 @@ export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
               <UtensilsCrossed className="h-10 w-10 opacity-40" />
             </div>
           )}
+          {category && (
+            <Badge variant="secondary" className="absolute left-2 top-2">
+              {category}
+            </Badge>
+          )}
         </div>
         <CardContent className="space-y-2 p-4">
           <h3 className="line-clamp-1 font-semibold leading-tight">{recipe.name}</h3>
@@ -37,7 +44,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
           <div className="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />
-              {recipe.servings}
+              {recipe.servings} {recipe.servings_unit === "unidades" ? "u." : "porc."}
             </span>
             {totalTime > 0 && (
               <span className="flex items-center gap-1">
@@ -45,10 +52,12 @@ export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
                 {formatMinutes(totalTime)}
               </span>
             )}
-            {recipe.owner?.name && (
+            {(recipe.credit ?? recipe.owner?.name) && (
               <span className="flex min-w-0 items-center gap-1">
                 <User className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{recipe.owner.name.split(" ")[0]}</span>
+                <span className="truncate">
+                  {recipe.credit ?? recipe.owner?.name?.split(" ")[0]}
+                </span>
               </span>
             )}
           </div>
