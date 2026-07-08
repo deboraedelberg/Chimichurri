@@ -56,6 +56,7 @@ export async function POST(req: Request) {
           order: i + 1,
           content: s.content,
           time: s.time ?? null,
+          heading: s.heading,
         })),
       },
     },

@@ -57,9 +57,10 @@ model Ingredient {
   recipe_id String
   recipe    Recipe @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
 
-  item   String
-  amount Float
-  unit   String
+  item    String
+  amount  Float
+  unit    String
+  heading Boolean @default(false) // título de sección ("Masa", "Relleno")
 
   @@index([recipe_id])
 }
@@ -72,6 +73,7 @@ model Step {
   order   Int
   content String
   time    Int? // seconds
+  heading Boolean @default(false) // título de sección ("Masa", "Relleno")
 
   @@index([recipe_id])
 }

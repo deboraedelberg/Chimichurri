@@ -30,6 +30,7 @@ export function toRecipeDTO(
       item: i.item,
       amount: i.amount,
       unit: i.unit,
+      heading: i.heading,
     })),
     steps: recipe.steps
       .slice()
@@ -39,6 +40,7 @@ export function toRecipeDTO(
         order: s.order,
         content: s.content,
         time: s.time,
+        heading: s.heading,
       })),
     createdAt: recipe.createdAt.toISOString(),
     updatedAt: recipe.updatedAt.toISOString(),

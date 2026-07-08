@@ -6,11 +6,13 @@ export const ingredientSchema = z.object({
   item: z.string().trim().min(1, "El nombre del ingrediente es obligatorio").max(200),
   amount: z.coerce.number().nonnegative(),
   unit: z.string().trim().min(1).max(30),
+  heading: z.boolean().optional().default(false),
 });
 
 export const stepSchema = z.object({
   content: z.string().trim().min(1, "El texto del paso es obligatorio").max(4000),
   time: z.coerce.number().int().positive().nullish(),
+  heading: z.boolean().optional().default(false),
 });
 
 export const recipeSchema = z.object({

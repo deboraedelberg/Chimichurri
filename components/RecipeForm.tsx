@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "@/components/icons";
 
@@ -36,11 +36,13 @@ interface IngredientRow {
   item: string;
   amount: string;
   unit: string;
+  heading?: boolean; // título de sección ("Masa", "Relleno")
 }
 
 interface StepRow {
   content: string;
   minutes: string; // temporizador opcional, en minutos
+  heading?: boolean;
 }
 
 interface RecipeFormProps {
@@ -93,14 +95,36 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
       item: i.item,
       amount: String(i.amount),
       unit: i.unit,
+      heading: i.heading,
     })) ?? [{ item: "", amount: "", unit: "g" }]
   );
   const [steps, setSteps] = useState<StepRow[]>(
     initial?.steps.map((s) => ({
       content: s.content,
       minutes: s.time ? String(Math.round(s.time / 60)) : "",
+      heading: s.heading,
     })) ?? [{ content: "", minutes: "" }]
   );
+
+  // Enter agrega una fila nueva y la enfoca
+  const ingredientRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const stepRefs = useRef<(HTMLTextAreaElement | HTMLInputElement | null)[]>([]);
+  const focusIngredient = useRef<number | null>(null);
+  const focusStep = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (focusIngredient.current !== null) {
+      ingredientRefs.current[focusIngredient.current]?.focus();
+      focusIngredient.current = null;
+    }
+  }, [ingredients.length]);
+
+  useEffect(() => {
+    if (focusStep.current !== null) {
+      stepRefs.current[focusStep.current]?.focus();
+      focusStep.current = null;
+    }
+  }, [steps.length]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +178,24 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
     setSteps((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   }
 
+  function insertIngredient(after: number, heading = false) {
+    focusIngredient.current = after + 1;
+    setIngredients((rows) => [
+      ...rows.slice(0, after + 1),
+      { item: "", amount: "", unit: defaultUnit, heading },
+      ...rows.slice(after + 1),
+    ]);
+  }
+
+  function insertStep(after: number, heading = false) {
+    focusStep.current = after + 1;
+    setSteps((rows) => [
+      ...rows.slice(0, after + 1),
+      { content: "", minutes: "", heading },
+      ...rows.slice(after + 1),
+    ]);
+  }
+
   function appendNotes(text: string) {
     setNotes((prev) => (prev ? `${prev}\n\n${text}` : text));
   }
@@ -199,16 +241,22 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
       tags: selectedTags,
       ingredients: ingredients
         .filter((row) => row.item.trim())
-        .map((row) => ({
-          item: row.item.trim(),
-          amount: row.unit === "cn" ? 1 : Number(row.amount) || 0,
-          unit: row.unit,
-        })),
+        .map((row) =>
+          row.heading
+            ? { item: row.item.trim(), amount: 0, unit: "unit", heading: true }
+            : {
+                item: row.item.trim(),
+                amount: row.unit === "cn" ? 1 : Number(row.amount) || 0,
+                unit: row.unit,
+                heading: false,
+              }
+        ),
       steps: steps
         .filter((row) => row.content.trim())
         .map((row) => ({
           content: row.content.trim(),
-          time: row.minutes ? Math.round(Number(row.minutes) * 60) : null,
+          time: !row.heading && row.minutes ? Math.round(Number(row.minutes) * 60) : null,
+          heading: !!row.heading,
         })),
     };
 
@@ -390,37 +438,75 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           <CardTitle className="text-lg">Ingredientes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {ingredients.map((row, i) => (
-            <div key={i} className="flex items-end gap-2">
-              <div className="min-w-0 flex-1 space-y-1">
-                {i === 0 && (
-                  <Label className="text-xs text-muted-foreground">Ingrediente</Label>
-                )}
+          {ingredients.map((row, i) =>
+            row.heading ? (
+              <div key={i} className="flex items-center gap-2 pt-2">
                 <Input
-                  placeholder="Harina"
+                  ref={(el) => {
+                    ingredientRefs.current[i] = el;
+                  }}
+                  placeholder="Título (ej: Masa, Relleno)"
+                  className="font-semibold"
                   value={row.item}
                   onChange={(e) => updateIngredient(i, { item: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      insertIngredient(i);
+                    }
+                  }}
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 text-destructive"
+                  onClick={() => setIngredients((rows) => rows.filter((_, j) => j !== i))}
+                  aria-label="Quitar título"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="w-20 space-y-1 sm:w-24">
-                {i === 0 && <Label className="text-xs text-muted-foreground">Cantidad</Label>}
+            ) : (
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  ref={(el) => {
+                    ingredientRefs.current[i] = el;
+                  }}
+                  placeholder="Harina"
+                  aria-label="Ingrediente"
+                  className="min-w-0 flex-1"
+                  value={row.item}
+                  onChange={(e) => updateIngredient(i, { item: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      insertIngredient(i);
+                    }
+                  }}
+                />
                 <Input
                   type="number"
                   step="any"
                   min={0}
-                  placeholder={row.unit === "cn" ? "—" : "500"}
+                  placeholder={row.unit === "cn" ? "—" : "Cant."}
+                  aria-label="Cantidad"
+                  className="w-20 sm:w-24"
                   disabled={row.unit === "cn"}
                   value={row.unit === "cn" ? "" : row.amount}
                   onChange={(e) => updateIngredient(i, { amount: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      insertIngredient(i);
+                    }
+                  }}
                 />
-              </div>
-              <div className="w-24 space-y-1 sm:w-28">
-                {i === 0 && <Label className="text-xs text-muted-foreground">Unidad</Label>}
                 <Select
                   value={row.unit}
                   onValueChange={(unit) => updateIngredient(i, { unit })}
                 >
-                  <SelectTrigger aria-label="Unidad">
+                  <SelectTrigger aria-label="Unidad" className="w-24 sm:w-28">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -431,31 +517,43 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 text-destructive"
+                  disabled={ingredients.length === 1}
+                  onClick={() => setIngredients((rows) => rows.filter((_, j) => j !== i))}
+                  aria-label="Quitar ingrediente"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="shrink-0 text-destructive"
-                disabled={ingredients.length === 1}
-                onClick={() => setIngredients((rows) => rows.filter((_, j) => j !== i))}
-                aria-label="Quitar ingrediente"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              setIngredients((rows) => [...rows, { item: "", amount: "", unit: defaultUnit }])
-            }
-          >
-            <Plus />
-            Agregar ingrediente
-          </Button>
+            )
+          )}
+          <p className="text-xs text-muted-foreground">
+            Tip: Enter agrega el siguiente ingrediente.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => insertIngredient(ingredients.length - 1)}
+            >
+              <Plus />
+              Agregar ingrediente
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => insertIngredient(ingredients.length - 1, true)}
+            >
+              <span className="font-serif text-base font-bold leading-none">H</span>
+              Agregar título
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -464,51 +562,113 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           <CardTitle className="text-lg">Pasos</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {steps.map((row, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <span className="mt-3 w-6 shrink-0 text-center text-sm font-semibold text-muted-foreground">
-                {i + 1}
-              </span>
-              <Textarea
-                placeholder="Amasa hasta que quede suave…"
-                value={row.content}
-                onChange={(e) => updateStep(i, { content: e.target.value })}
-                rows={2}
-                className="min-w-0 flex-1"
-              />
-              <div className="w-20 shrink-0 space-y-1">
-                <Input
-                  type="number"
-                  min={0}
-                  placeholder="min"
-                  aria-label={`Temporizador del paso ${i + 1} (minutos)`}
-                  value={row.minutes}
-                  onChange={(e) => updateStep(i, { minutes: e.target.value })}
-                />
-                <p className="text-center text-[10px] text-muted-foreground">tiempo</p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="shrink-0 text-destructive"
-                disabled={steps.length === 1}
-                onClick={() => setSteps((rows) => rows.filter((_, j) => j !== i))}
-                aria-label={`Quitar paso ${i + 1}`}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setSteps((rows) => [...rows, { content: "", minutes: "" }])}
-          >
-            <Plus />
-            Agregar paso
-          </Button>
+          {(() => {
+            let stepNumber = 0;
+            return steps.map((row, i) => {
+              if (row.heading) {
+                return (
+                  <div key={i} className="flex items-center gap-2 pt-2">
+                    <span className="w-6 shrink-0" />
+                    <Input
+                      ref={(el) => {
+                        stepRefs.current[i] = el;
+                      }}
+                      placeholder="Título (ej: Masa, Relleno)"
+                      className="min-w-0 flex-1 font-semibold"
+                      value={row.content}
+                      onChange={(e) => updateStep(i, { content: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          insertStep(i);
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-destructive"
+                      onClick={() => setSteps((rows) => rows.filter((_, j) => j !== i))}
+                      aria-label="Quitar título"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              }
+              stepNumber += 1;
+              const n = stepNumber;
+              return (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="mt-3 w-6 shrink-0 text-center text-sm font-semibold text-muted-foreground">
+                    {n}
+                  </span>
+                  <Textarea
+                    ref={(el) => {
+                      stepRefs.current[i] = el;
+                    }}
+                    placeholder="Amasa hasta que quede suave…"
+                    value={row.content}
+                    onChange={(e) => updateStep(i, { content: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        insertStep(i);
+                      }
+                    }}
+                    rows={2}
+                    className="min-w-0 flex-1"
+                  />
+                  <div className="w-20 shrink-0 space-y-1">
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="min"
+                      aria-label={`Temporizador del paso ${n} (minutos)`}
+                      value={row.minutes}
+                      onChange={(e) => updateStep(i, { minutes: e.target.value })}
+                    />
+                    <p className="text-center text-[10px] text-muted-foreground">tiempo</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-destructive"
+                    disabled={steps.length === 1}
+                    onClick={() => setSteps((rows) => rows.filter((_, j) => j !== i))}
+                    aria-label={`Quitar paso ${n}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            });
+          })()}
+          <p className="text-xs text-muted-foreground">
+            Tip: Enter agrega el siguiente paso; Shift+Enter hace un salto de línea.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => insertStep(steps.length - 1)}
+            >
+              <Plus />
+              Agregar paso
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => insertStep(steps.length - 1, true)}
+            >
+              <span className="font-serif text-base font-bold leading-none">H</span>
+              Agregar título
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

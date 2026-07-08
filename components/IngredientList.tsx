@@ -31,6 +31,15 @@ export function IngredientList({ ingredients, multiplier }: IngredientListProps)
   return (
     <ul className="space-y-3">
       {ingredients.map((ing) => {
+        // Título de sección ("Masa", "Relleno")
+        if (ing.heading) {
+          return (
+            <li key={ing.id} className="pt-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground first:pt-0">
+              {ing.item}
+            </li>
+          );
+        }
+
         // C/N ("cantidad necesaria"): sin número, no escala ni convierte
         if (ing.unit === "cn") {
           return (

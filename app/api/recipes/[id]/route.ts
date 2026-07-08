@@ -60,6 +60,7 @@ export async function PUT(req: Request, { params }: Params) {
             order: i + 1,
             content: s.content,
             time: s.time ?? null,
+            heading: s.heading,
           })),
         },
       },

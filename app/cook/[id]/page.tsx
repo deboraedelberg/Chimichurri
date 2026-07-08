@@ -25,7 +25,7 @@ export default async function CookPage({
     where: { id: params.id },
     include: RECIPE_INCLUDE,
   });
-  if (!recipe || recipe.steps.length === 0) notFound();
+  if (!recipe || recipe.steps.filter((s) => !s.heading).length === 0) notFound();
 
   return <CookingMode recipe={toRecipeDTO(recipe, permission)} />;
 }

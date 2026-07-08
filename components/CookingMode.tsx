@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ListChecks, Pause, Play, RotateCcw, X } from "@/components/icons";
 
@@ -29,8 +29,21 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const step = index >= 0 ? recipe.steps[index] : null;
-  const isLastStep = index === recipe.steps.length - 1;
+  // Los títulos ("Masa", "Relleno") no son pantallas: se muestran como
+  // etiqueta de sección sobre el paso y la navegación los salta.
+  const navSteps = useMemo(() => {
+    const list: { step: RecipeDTO["steps"][number]; section: string | null }[] = [];
+    let section: string | null = null;
+    for (const s of recipe.steps) {
+      if (s.heading) section = s.content;
+      else list.push({ step: s, section });
+    }
+    return list;
+  }, [recipe.steps]);
+
+  const current = index >= 0 ? navSteps[index] : null;
+  const step = current?.step ?? null;
+  const isLastStep = index === navSteps.length - 1;
 
   // Keep the screen awake while cooking
   useEffect(() => {
@@ -88,7 +101,7 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
   }
 
   const progress =
-    index < 0 ? 0 : Math.round(((index + 1) / recipe.steps.length) * 100);
+    index < 0 ? 0 : Math.round(((index + 1) / navSteps.length) * 100);
 
   return (
     <div className="dark fixed inset-0 z-50 flex flex-col bg-background text-foreground">
@@ -99,7 +112,7 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
           <p className="text-xs text-muted-foreground">
             {index < 0
               ? "Ingredientes"
-              : `Paso ${index + 1} de ${recipe.steps.length}`}
+              : `Paso ${index + 1} de ${navSteps.length}`}
           </p>
         </div>
         <Button variant="ghost" size="icon" asChild aria-label="Salir del modo cocina">
@@ -128,7 +141,14 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
                   Prepara todo
                 </h2>
                 <ul className="space-y-4">
-                  {recipe.ingredients.map((ing) => (
+                  {recipe.ingredients.map((ing) => ing.heading ? (
+                    <li
+                      key={ing.id}
+                      className="pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground first:pt-0"
+                    >
+                      {ing.item}
+                    </li>
+                  ) : (
                     <li key={ing.id} className="flex items-center gap-3">
                       <Checkbox
                         id={`cook-ing-${ing.id}`}
@@ -166,6 +186,11 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
             </Card>
           ) : (
             <div className="space-y-6">
+              {current?.section && (
+                <p className="text-sm font-semibold uppercase tracking-wide text-primary">
+                  {current.section}
+                </p>
+              )}
               <p className="text-2xl font-medium leading-relaxed sm:text-3xl">
                 {step?.content}
               </p>
@@ -247,9 +272,9 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
           )}
         </div>
         {/* Step dots */}
-        {recipe.steps.length > 1 && (
+        {navSteps.length > 1 && (
           <div className="mt-3 flex justify-center gap-1.5">
-            {recipe.steps.map((s, i) => (
+            {navSteps.map(({ step: s }, i) => (
               <button
                 key={s.id}
                 onClick={() => setIndex(i)}

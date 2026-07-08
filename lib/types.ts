@@ -2,11 +2,13 @@ export interface IngredientInput {
   item: string;
   amount: number;
   unit: string;
+  heading?: boolean;
 }
 
 export interface StepInput {
   content: string;
   time?: number | null; // seconds
+  heading?: boolean;
 }
 
 export interface RecipeInput {
@@ -21,8 +23,12 @@ export interface RecipeInput {
   steps: StepInput[];
 }
 
-export interface IngredientDTO extends IngredientInput {
+export interface IngredientDTO {
   id: string;
+  item: string;
+  amount: number;
+  unit: string;
+  heading: boolean;
 }
 
 export interface StepDTO {
@@ -30,6 +36,7 @@ export interface StepDTO {
   order: number;
   content: string;
   time: number | null;
+  heading: boolean;
 }
 
 export interface RecipeDTO {

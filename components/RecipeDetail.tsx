@@ -161,22 +161,38 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
           </CardHeader>
           <CardContent>
             <ol className="space-y-4">
-              {recipe.steps.map((step, i) => (
-                <li key={step.id} className="flex gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1 space-y-1 pt-0.5">
-                    <p className="leading-relaxed">{step.content}</p>
-                    {step.time != null && (
-                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {formatMinutes(Math.round(step.time / 60))}
-                      </p>
-                    )}
-                  </div>
-                </li>
-              ))}
+              {(() => {
+                let n = 0;
+                return recipe.steps.map((step) => {
+                  if (step.heading) {
+                    return (
+                      <li
+                        key={step.id}
+                        className="pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground first:pt-0"
+                      >
+                        {step.content}
+                      </li>
+                    );
+                  }
+                  n += 1;
+                  return (
+                    <li key={step.id} className="flex gap-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                        {n}
+                      </span>
+                      <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                        <p className="leading-relaxed">{step.content}</p>
+                        {step.time != null && (
+                          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {formatMinutes(Math.round(step.time / 60))}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                });
+              })()}
             </ol>
           </CardContent>
         </Card>
