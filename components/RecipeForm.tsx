@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { OCRImporter } from "@/components/OCRImporter";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { TagInput } from "@/components/TagInput";
 import { URLImporter } from "@/components/URLImporter";
 import { UNITS } from "@/lib/conversions";
 import { CATEGORY_GROUPS } from "@/lib/categories";
@@ -87,7 +88,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
   const [servingsUnit, setServingsUnit] = useState(initial?.servings_unit ?? "porciones");
   const [prepTime, setPrepTime] = useState(initial?.prepTime ? String(initial.prepTime) : "");
   const [cookTime, setCookTime] = useState(initial?.cookTime ? String(initial.cookTime) : "");
-  const [tags, setTags] = useState(initial?.tags.join(", ") ?? "");
+  const [tagList, setTagList] = useState<string[]>(initial?.tags ?? []);
   const [notes, setNotes] = useState("");
 
   const [ingredients, setIngredients] = useState<IngredientRow[]>(
@@ -144,28 +145,19 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
     );
   }, [mode]);
 
-  // Etiquetas elegidas (parseadas del input) y sugerencias
-  const selectedTags = useMemo(
-    () =>
-      tags
-        .split(",")
-        .map((t) => t.trim().toLowerCase())
-        .filter(Boolean),
-    [tags]
-  );
-
+  // Sugerencias de etiquetas (chips debajo del input)
   const tagSuggestions = useMemo(() => {
     const hints = TAG_HINTS.filter(([re]) => re.test(name)).map(([, tag]) => tag);
     const all = [...hints, ...knownTags.map((t) => t.toLowerCase()), ...CURATED_TAGS];
     const unique: string[] = [];
     for (const tag of all) {
-      if (!selectedTags.includes(tag) && !unique.includes(tag)) unique.push(tag);
+      if (!tagList.includes(tag) && !unique.includes(tag)) unique.push(tag);
     }
     return unique.slice(0, MAX_TAG_SUGGESTIONS);
-  }, [name, knownTags, selectedTags]);
+  }, [name, knownTags, tagList]);
 
   function addTag(tag: string) {
-    setTags((prev) => (prev.trim() ? `${prev.replace(/,\s*$/, "")}, ${tag}` : tag));
+    setTagList((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
   }
 
   function updateIngredient(index: number, patch: Partial<IngredientRow>) {
@@ -241,7 +233,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
       servings_unit: servingsUnit,
       prepTime: prepTime ? Number(prepTime) : null,
       cookTime: cookTime ? Number(cookTime) : null,
-      tags: selectedTags,
+      tags: tagList,
       ingredients: ingredients
         .filter((row) => row.item.trim())
         .map((row) =>
@@ -406,12 +398,13 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipe-tags">Etiquetas (separadas por comas)</Label>
-            <Input
+            <Label htmlFor="recipe-tags">Etiquetas</Label>
+            <TagInput
               id="recipe-tags"
-              placeholder="comida judía, merienda, rápida"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
+              value={tagList}
+              onChange={setTagList}
+              suggestions={[...knownTags, ...CURATED_TAGS]}
+              placeholder="comida judía, merienda, rápida…"
             />
             {tagSuggestions.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
