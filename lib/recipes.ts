@@ -34,7 +34,11 @@ export const RECIPE_INCLUDE = {
 
 export type Permission = "owner" | "edit" | "view" | null;
 
-/** Resolve what `userId` may do with `recipeId`. */
+/**
+ * Sitio familiar: cualquier usuario autenticado puede ver y editar
+ * cualquier receta. Distinguimos "owner" solo para mostrar el autor
+ * y para los futuros filtros ("creada por mí").
+ */
 export async function getRecipePermission(
   recipeId: string,
   userId: string
@@ -44,14 +48,5 @@ export async function getRecipePermission(
     select: { user_id: true },
   });
   if (!recipe) return null;
-  if (recipe.user_id === userId) return "owner";
-
-  const share = await prisma.recipeShare.findUnique({
-    where: {
-      recipe_id_shared_with_id: { recipe_id: recipeId, shared_with_id: userId },
-    },
-    select: { permission: true },
-  });
-  if (!share) return null;
-  return share.permission === "edit" ? "edit" : "view";
+  return recipe.user_id === userId ? "owner" : "edit";
 }

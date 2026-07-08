@@ -12,18 +12,16 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim();
 
+  // Sitio familiar: todas las recetas son visibles para todos
   const recipes = await prisma.recipe.findMany({
-    where: {
-      user_id: session.user.id,
-      ...(q
-        ? {
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { tags: { has: q.toLowerCase() } },
-            ],
-          }
-        : {}),
-    },
+    where: q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { tags: { has: q.toLowerCase() } },
+          ],
+        }
+      : undefined,
     include: RECIPE_INCLUDE,
     orderBy: { updatedAt: "desc" },
   });

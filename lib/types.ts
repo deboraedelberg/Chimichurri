@@ -52,16 +52,3 @@ export interface RecipeDTO {
   permission?: "owner" | "edit" | "view";
 }
 
-export interface ShareDTO {
-  id: string;
-  permission: string;
-  shared_at: string;
-  shared_with: { id: string; name: string | null; email: string | null };
-}
-
-export interface ShoppingListItem {
-  item: string;
-  amount: number;
-  unit: string;
-  recipes: string[];
-}

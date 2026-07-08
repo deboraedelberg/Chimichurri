@@ -34,12 +34,6 @@ export async function PUT(req: Request, { params }: Params) {
   if (!permission) {
     return NextResponse.json({ error: "No encontrada" }, { status: 404 });
   }
-  if (permission === "view") {
-    return NextResponse.json(
-      { error: "Solo tienes acceso de lectura a esta receta" },
-      { status: 403 }
-    );
-  }
 
   const body = await req.json().catch(() => null);
   const parsed = recipeSchema.safeParse(body);
@@ -82,15 +76,10 @@ export async function DELETE(_req: Request, { params }: Params) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  // Sitio familiar: cualquier miembro puede eliminar (con confirmación en la UI)
   const permission = await getRecipePermission(params.id, session.user.id);
   if (!permission) {
     return NextResponse.json({ error: "No encontrada" }, { status: 404 });
-  }
-  if (permission !== "owner") {
-    return NextResponse.json(
-      { error: "Solo el dueño puede eliminar una receta" },
-      { status: 403 }
-    );
   }
 
   await prisma.recipe.delete({ where: { id: params.id } });

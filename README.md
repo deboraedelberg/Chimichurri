@@ -15,15 +15,15 @@ Your family recipes, organized. A full-stack recipe app: create and share recipe
 
 | Feature | How it works |
 | --- | --- |
+| Family model | Everyone who signs up can view, edit and add all recipes (each recipe keeps its author) |
 | Auth | Google OAuth or email/password; JWT sessions; all routes protected by middleware |
 | Recipe CRUD | Cards, dialogs, dynamic ingredient/step editors |
 | Photo → recipe | Upload a photo of a recipe, Tesseract.js extracts the text in the browser, you review it and fill the form |
-| URL import | Paste a URL + copy-paste the recipe text (no scraping in MVP) |
+| URL import | Paste a URL → server fetches the page and parses schema.org/Recipe JSON-LD (name, ingredients, steps, times, photo); manual paste fallback |
 | Ingredient scaling | Servings dropdown auto-multiplies every ingredient (½x, 2x, …) |
 | Unit conversion | Per-ingredient dropdown converts g/kg/oz/lb and ml/l/cup/tbsp/tsp/fl oz |
 | Cooking mode | Full-screen dark UI, ingredient checklist, one step per screen, countdown timers, screen wake-lock |
-| Shopping list | Select recipes → consolidated list (same items summed, units normalized) → copy or email |
-| Family sharing | Share by email with view/edit permission; revoke anytime |
+| Settings | Theme (light/dark/system), profile name, default servings & units, delete account |
 
 ## Setup
 
@@ -87,20 +87,18 @@ Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to 
 POST   /api/auth/signup                    create account (email/password)
 *      /api/auth/[...nextauth]             NextAuth (signin/signout/session/callbacks)
 
-GET    /api/recipes                        list my recipes (?q= search)
+GET    /api/recipes                        list all family recipes (?q= search)
 POST   /api/recipes                        create
-GET    /api/recipes/[id]                   detail (owner or shared)
-PUT    /api/recipes/[id]                   update (owner or edit permission)
-DELETE /api/recipes/[id]                   delete (owner only)
+GET    /api/recipes/[id]                   detail
+PUT    /api/recipes/[id]                   update (any member)
+DELETE /api/recipes/[id]                   delete (any member)
 
-GET    /api/recipes/shared                 recipes shared with me
-GET    /api/recipes/[id]/share             list shares (owner)
-POST   /api/recipes/[id]/share             share by email {email, permission}
-DELETE /api/recipes/[id]/share/[userId]    revoke
+PATCH  /api/user                           update profile name
+DELETE /api/user                           delete account (cascade)
 
+POST   /api/import                         {url} → parsed recipe (schema.org JSON-LD)
 POST   /api/upload                         image → Vercel Blob {url}
 POST   /api/convert                        {amount, from, to} → {amount, unit}
-POST   /api/shopping-list                  {recipeIds[]} → {items[]} consolidated
 ```
 
 ## Project structure

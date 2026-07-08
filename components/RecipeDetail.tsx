@@ -20,7 +20,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { IngredientList } from "@/components/IngredientList";
 import { ScalingControl } from "@/components/ScalingControl";
-import { ShareDialog } from "@/components/ShareDialog";
 import { formatMinutes } from "@/lib/utils";
 import type { RecipeDTO } from "@/lib/types";
 
@@ -30,14 +29,12 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
   const [deleting, setDeleting] = useState(false);
 
   const multiplier = servings / recipe.servings;
-  const canEdit = recipe.permission === "owner" || recipe.permission === "edit";
-  const isOwner = recipe.permission === "owner";
 
   async function handleDelete() {
     setDeleting(true);
     const res = await fetch(`/api/recipes/${recipe.id}`, { method: "DELETE" });
     if (res.ok) {
-      router.push("/recipes");
+      router.push("/");
       router.refresh();
     } else {
       setDeleting(false);
@@ -61,40 +58,35 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-3xl font-bold tracking-tight">{recipe.name}</h1>
           <div className="flex flex-wrap gap-2">
-            {isOwner && <ShareDialog recipeId={recipe.id} />}
-            {canEdit && (
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/recipes/${recipe.id}/edit`}>
-                  <Pencil />
-                  Editar
-                </Link>
-              </Button>
-            )}
-            {isOwner && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-destructive">
-                    <Trash2 />
-                    Eliminar
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/recipes/${recipe.id}/edit`}>
+                <Pencil />
+                Editar
+              </Link>
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive">
+                  <Trash2 />
+                  Eliminar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>¿Eliminar “{recipe.name}”?</DialogTitle>
+                  <DialogDescription>
+                    Esto elimina la receta permanentemente para toda la familia. No se
+                    puede deshacer.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                    {deleting && <Loader2 className="animate-spin" />}
+                    Eliminar receta
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>¿Eliminar “{recipe.name}”?</DialogTitle>
-                    <DialogDescription>
-                      Esto elimina la receta permanentemente y revoca todos los accesos
-                      compartidos. No se puede deshacer.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-                      {deleting && <Loader2 className="animate-spin" />}
-                      Eliminar receta
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -103,12 +95,8 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
         )}
 
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          {!isOwner && recipe.owner && (
-            <span>
-              De {recipe.owner.name ?? recipe.owner.email}
-              {recipe.permission &&
-                ` · puedes ${recipe.permission === "edit" ? "editar" : "ver"}`}
-            </span>
+          {recipe.owner && (
+            <span>De {recipe.owner.name ?? recipe.owner.email}</span>
           )}
           {recipe.prepTime != null && recipe.prepTime > 0 && (
             <span className="flex items-center gap-1">

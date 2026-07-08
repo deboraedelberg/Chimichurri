@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, Users, UtensilsCrossed } from "@/components/icons";
+import { Clock, User, Users, UtensilsCrossed } from "@/components/icons";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,11 +26,6 @@ export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
               <UtensilsCrossed className="h-10 w-10 opacity-40" />
             </div>
           )}
-          {recipe.permission && recipe.permission !== "owner" && (
-            <Badge variant="secondary" className="absolute left-2 top-2">
-              Compartida · {recipe.permission === "edit" ? "editar" : "ver"}
-            </Badge>
-          )}
         </div>
         <CardContent className="space-y-2 p-4">
           <h3 className="line-clamp-1 font-semibold leading-tight">{recipe.name}</h3>
@@ -48,6 +43,12 @@ export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
                 {formatMinutes(totalTime)}
+              </span>
+            )}
+            {recipe.owner?.name && (
+              <span className="flex min-w-0 items-center gap-1">
+                <User className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{recipe.owner.name.split(" ")[0]}</span>
               </span>
             )}
           </div>

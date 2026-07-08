@@ -3,15 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import {
-  ChefHat,
-  ListChecks,
-  LogOut,
-  Menu,
-  Settings,
-  User,
-  UtensilsCrossed,
-} from "@/components/icons";
+import { ChefHat, LogOut, Menu, Plus, Settings } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,19 +14,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-
-const NAV_LINKS = [
-  { href: "/recipes", label: "Recetas", icon: UtensilsCrossed },
-  { href: "/shopping-list", label: "Lista de compras", icon: ListChecks },
-];
 
 export function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
 
-  // Cooking mode is intentionally chrome-free
+  // El modo cocina no lleva chrome
   if (pathname?.startsWith("/cook/")) return null;
+
+  const userLabel = session?.user && (
+    <>
+      <DropdownMenuLabel className="font-normal">
+        <div className="flex flex-col space-y-1">
+          <p className="text-sm font-medium leading-none">
+            {session.user.name ?? "Chef"}
+          </p>
+          <p className="text-xs leading-none text-muted-foreground">
+            {session.user.email}
+          </p>
+        </div>
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+    </>
+  );
+
+  const menuItems = (
+    <>
+      <DropdownMenuItem asChild>
+        <Link href="/recipes/new">
+          <Plus />
+          Nueva receta
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <Link href="/settings">
+          <Settings />
+          Configuración
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/auth/signin" })}>
+        <LogOut />
+        Cerrar sesión
+      </DropdownMenuItem>
+    </>
+  );
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -44,79 +68,22 @@ export function Navbar() {
           <span className="text-lg tracking-tight">Chimichurri</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-            <Button
-              key={href}
-              variant="ghost"
-              size="sm"
-              asChild
-              className={cn(
-                pathname?.startsWith(href) && "bg-accent text-accent-foreground"
-              )}
-            >
-              <Link href={href}>
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            </Button>
-          ))}
-        </nav>
+        {session?.user && (
+          <div className="flex items-center gap-2">
+            {/* Menú mobile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="icon" aria-label="Menú">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 md:hidden">
+                {userLabel}
+                {menuItems}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-        <div className="flex items-center gap-2">
-          {/* Menú mobile: todo junto — navegación + cuenta */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon" aria-label="Menú">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 md:hidden">
-              {session?.user && (
-                <>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {session.user.name ?? "Chef"}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {session.user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-                <DropdownMenuItem key={href} asChild>
-                  <Link href={href}>
-                    <Icon />
-                    {label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-              {session?.user && (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings">
-                      <Settings />
-                      Configuración
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={() => signOut({ callbackUrl: "/auth/signin" })}
-                  >
-                    <LogOut />
-                    Cerrar sesión
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Avatar con menú de cuenta: solo en desktop (en mobile va todo en la hamburguesa) */}
-          {session?.user && (
+            {/* Avatar con menú: solo desktop */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -143,40 +110,12 @@ export function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {session.user.name ?? "Chef"}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {session.user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/recipes">
-                    <User />
-                    Mis recetas
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings />
-                    Configuración
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={() => signOut({ callbackUrl: "/auth/signin" })}
-                >
-                  <LogOut />
-                  Cerrar sesión
-                </DropdownMenuItem>
+                {userLabel}
+                {menuItems}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );
