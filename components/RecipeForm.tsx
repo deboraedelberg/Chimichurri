@@ -200,27 +200,30 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
     setNotes((prev) => (prev ? `${prev}\n\n${text}` : text));
   }
 
-  /** Precarga el formulario con una receta importada desde una URL */
+  /** Precarga el formulario con una receta importada (URL u OCR) */
   function applyImported(recipe: ImportedRecipe) {
     if (recipe.name) setName(recipe.name);
+    if (recipe.credit) setCredit(recipe.credit);
     if (recipe.description) setDescription(recipe.description);
     if (recipe.image) setPhotoUrl(recipe.image);
     if (recipe.servings) setServings(String(recipe.servings));
+    if (recipe.servingsUnit) setServingsUnit(recipe.servingsUnit);
     if (recipe.prepTime) setPrepTime(String(recipe.prepTime));
     if (recipe.cookTime) setCookTime(String(recipe.cookTime));
     if (recipe.ingredients.length > 0) {
       setIngredients(
         recipe.ingredients.map((i) => ({
           item: i.item,
-          amount: String(i.amount),
+          amount: i.heading ? "" : String(i.amount),
           unit: i.unit,
+          heading: i.heading,
         }))
       );
     }
     if (recipe.steps.length > 0) {
       setSteps(recipe.steps.map((content) => ({ content, minutes: "" })));
     }
-    appendNotes(`Fuente: ${recipe.sourceUrl}`);
+    if (recipe.sourceUrl) appendNotes(`Fuente: ${recipe.sourceUrl}`);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -293,7 +296,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                   if (parts.length) appendNotes(parts.join("\n\n"));
                 }}
               />
-              <OCRImporter onTextExtracted={appendNotes} />
+              <OCRImporter onRecipe={applyImported} onTextExtracted={appendNotes} />
             </div>
           </div>
         </CardHeader>

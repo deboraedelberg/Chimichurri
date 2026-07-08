@@ -13,9 +13,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { parseRecipeText, type ImportedRecipe } from "@/lib/import";
 
 interface OCRImporterProps {
-  /** Recibe el texto extraído cuando el usuario lo acepta */
+  /** Receta parseada del texto escaneado — completa el formulario */
+  onRecipe: (recipe: ImportedRecipe) => void;
+  /** Fallback: el texto crudo va a las notas */
   onTextExtracted: (text: string) => void;
 }
 
@@ -23,11 +26,24 @@ interface OCRImporterProps {
  * Escanear una receta desde una foto: Tesseract.js corre en el navegador,
  * el texto extraído se revisa en un dialog y se agrega a las notas del form.
  */
-export function OCRImporter({ onTextExtracted }: OCRImporterProps) {
+export function OCRImporter({ onRecipe, onTextExtracted }: OCRImporterProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [ocrText, setOcrText] = useState<string | null>(null);
+  const [parseError, setParseError] = useState(false);
+
+  function handleFill() {
+    if (!ocrText) return;
+    const recipe = parseRecipeText(ocrText);
+    if (!recipe) {
+      setParseError(true);
+      return;
+    }
+    onRecipe(recipe);
+    setOcrText(null);
+    setParseError(false);
+  }
 
   async function handleScan(file: File) {
     setScanning(true);
@@ -74,13 +90,21 @@ export function OCRImporter({ onTextExtracted }: OCRImporterProps) {
         {scanning ? `Leyendo… ${progress}%` : "Escanear foto (OCR)"}
       </Button>
 
-      <Dialog open={ocrText !== null} onOpenChange={(open) => !open && setOcrText(null)}>
+      <Dialog
+        open={ocrText !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOcrText(null);
+            setParseError(false);
+          }
+        }}
+      >
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Texto extraído</DialogTitle>
             <DialogDescription>
-              Revisa el texto extraído de tu foto, edítalo si es necesario y agrégalo a las
-              notas de la receta para completar el formulario.
+              Revisa el texto de tu foto y corrige errores de lectura. Al completar el
+              formulario detectamos nombre, ingredientes y pasos automáticamente.
             </DialogDescription>
           </DialogHeader>
           <Textarea
@@ -89,18 +113,27 @@ export function OCRImporter({ onTextExtracted }: OCRImporterProps) {
             rows={12}
             className="font-mono text-xs"
           />
+          {parseError && (
+            <p className="text-sm text-destructive">
+              No se detectaron ingredientes ni pasos en este texto. Verifica que tenga
+              secciones tipo &quot;Ingredientes&quot; y &quot;Preparación&quot;, o agrégalo a
+              las notas y completa el form a mano.
+            </p>
+          )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOcrText(null)}>
-              Descartar
-            </Button>
             <Button
               type="button"
+              variant="ghost"
               onClick={() => {
                 if (ocrText) onTextExtracted(ocrText);
                 setOcrText(null);
+                setParseError(false);
               }}
             >
-              Usar este texto
+              Solo a las notas
+            </Button>
+            <Button type="button" onClick={handleFill}>
+              Completar formulario
             </Button>
           </DialogFooter>
         </DialogContent>

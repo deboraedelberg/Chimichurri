@@ -11,6 +11,7 @@ export interface ImportedIngredient {
   item: string;
   amount: number;
   unit: string;
+  heading?: boolean; // título de sección ("Tapitas", "Relleno")
 }
 
 export interface ImportedRecipe {
@@ -18,6 +19,8 @@ export interface ImportedRecipe {
   description: string | null;
   image: string | null;
   servings: number | null;
+  servingsUnit?: "porciones" | "unidades";
+  credit?: string | null; // "Receta de la Babe Teresa"
   prepTime: number | null; // minutos
   cookTime: number | null; // minutos
   ingredients: ImportedIngredient[];
@@ -248,6 +251,109 @@ export function parseRecipeFromHtml(html: string, sourceUrl: string): ImportedRe
   }
 
   return null;
+}
+
+/* --------------------------- texto libre -> receta --------------------------- */
+
+const ING_HEADER = /^ingredientes?\b/i;
+const STEP_HEADER = /^(preparaci[oó]n|pasos?|instrucciones|elaboraci[oó]n|procedimiento)\b/i;
+const BULLET = /^[-*•·▪○●➤>]+\s*/;
+
+/** "para 48 knishes" / "(para 4 porciones)" -> rinde + tipo */
+function parseYieldFromText(line: string): { servings: number; unit: "porciones" | "unidades" } | null {
+  const m = line.match(/\bpara\s+(\d+)\s*([a-záéíóúñ]+)?/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (n < 1 || n > 100) return null;
+  const word = (m[2] ?? "").toLowerCase();
+  const isPorciones = /porci|persona|comensal|racion/.test(word);
+  return { servings: n, unit: isPorciones ? "porciones" : "unidades" };
+}
+
+/**
+ * Parsea texto libre de una receta (OCR o pegado a mano) con el formato
+ * típico "Nombre / Ingredientes / Preparación". Devuelve null si no se
+ * encontró nada estructurado.
+ */
+export function parseRecipeText(raw: string): ImportedRecipe | null {
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return null;
+
+  let name = "";
+  let credit: string | null = null;
+  let servings: number | null = null;
+  let servingsUnit: "porciones" | "unidades" | undefined;
+  const descLines: string[] = [];
+  const ingredients: ImportedIngredient[] = [];
+  const steps: string[] = [];
+  let section: "pre" | "ing" | "steps" = "pre";
+
+  for (const line of lines) {
+    if (ING_HEADER.test(line)) {
+      section = "ing";
+      const y = parseYieldFromText(line); // "Ingredientes (para 48 knishes)"
+      if (y) {
+        servings = y.servings;
+        servingsUnit = y.unit;
+      }
+      continue;
+    }
+    if (STEP_HEADER.test(line)) {
+      section = "steps";
+      continue;
+    }
+
+    if (section === "pre") {
+      const creditMatch = line.match(/^\(?\s*receta de\s+(.+?)\)?\.?$/i);
+      if (creditMatch) {
+        credit = creditMatch[1].trim();
+        continue;
+      }
+      const y = parseYieldFromText(line);
+      if (y && line.length < 40) {
+        servings = y.servings;
+        servingsUnit = y.unit;
+        continue;
+      }
+      if (!name) {
+        name = line;
+        continue;
+      }
+      descLines.push(line);
+    } else if (section === "ing") {
+      const clean = line.replace(BULLET, "").trim();
+      if (!clean) continue;
+      // "Tapitas:" -> título de sección dentro de los ingredientes
+      if (/^.{2,40}:$/.test(clean)) {
+        ingredients.push({ item: clean.slice(0, -1).trim(), amount: 0, unit: "unit", heading: true });
+        continue;
+      }
+      const ing = parseIngredient(clean);
+      if (ing) ingredients.push(ing);
+    } else {
+      const clean = line.replace(BULLET, "").replace(/^\d+\s*[.)]\s*/, "").trim();
+      if (clean) steps.push(clean);
+    }
+  }
+
+  if (ingredients.length === 0 && steps.length === 0) return null;
+
+  return {
+    name,
+    description: descLines.join(" ") || null,
+    image: null,
+    servings,
+    servingsUnit,
+    credit,
+    prepTime: null,
+    cookTime: null,
+    ingredients,
+    steps,
+    sourceUrl: "",
+  };
 }
 
 /* ------------------------------- guard de URL ------------------------------- */
