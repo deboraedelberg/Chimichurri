@@ -1,19 +1,25 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ImageIcon, Loader2, X } from "@/components/icons";
+import { ImageIcon, Loader2, Sparkles, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 
 interface PhotoUploaderProps {
   photoUrl: string | null;
   onPhotoChange: (url: string | null) => void;
+  /** Descripción del plato para generar la foto con IA (nombre de la receta) */
+  aiPrompt?: string;
 }
 
-/** Foto de portada de la receta: sube a Vercel Blob vía /api/upload. */
-export function PhotoUploader({ photoUrl, onPhotoChange }: PhotoUploaderProps) {
+/**
+ * Foto de portada: subir a Vercel Blob vía /api/upload, o generarla con IA
+ * (Pollinations.ai — gratuito, sin API key; la URL es determinística por seed).
+ */
+export function PhotoUploader({ photoUrl, onPhotoChange, aiPrompt }: PhotoUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleUpload(file: File) {
@@ -31,6 +37,32 @@ export function PhotoUploader({ photoUrl, onPhotoChange }: PhotoUploaderProps) {
     } finally {
       setUploading(false);
     }
+  }
+
+  function handleGenerate() {
+    const prompt = aiPrompt?.trim();
+    if (!prompt) {
+      setError("Escribe primero el nombre de la receta para generar la foto.");
+      return;
+    }
+    setGenerating(true);
+    setError(null);
+
+    const seed = Math.floor(Math.random() * 1_000_000);
+    const fullPrompt = `${prompt}, fotografía gastronómica profesional, plato casero apetitoso, luz cálida natural, primer plano`;
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=768&seed=${seed}&nologo=true`;
+
+    // Precargamos la imagen para mostrar spinner mientras se genera (~10-20s)
+    const img = new window.Image();
+    img.onload = () => {
+      onPhotoChange(url);
+      setGenerating(false);
+    };
+    img.onerror = () => {
+      setError("No se pudo generar la imagen. Intenta de nuevo.");
+      setGenerating(false);
+    };
+    img.src = url;
   }
 
   return (
@@ -63,16 +95,28 @@ export function PhotoUploader({ photoUrl, onPhotoChange }: PhotoUploaderProps) {
           </Button>
         </div>
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full sm:w-auto"
-          disabled={uploading}
-          onClick={() => inputRef.current?.click()}
-        >
-          {uploading ? <Loader2 className="animate-spin" /> : <ImageIcon />}
-          {uploading ? "Subiendo…" : "Subir foto"}
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            disabled={uploading || generating}
+            onClick={() => inputRef.current?.click()}
+          >
+            {uploading ? <Loader2 className="animate-spin" /> : <ImageIcon />}
+            {uploading ? "Subiendo…" : "Subir foto"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 sm:flex-none"
+            disabled={uploading || generating}
+            onClick={handleGenerate}
+          >
+            {generating ? <Loader2 className="animate-spin" /> : <Sparkles />}
+            {generating ? "Generando…" : "Generar con IA"}
+          </Button>
+        </div>
       )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}

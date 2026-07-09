@@ -348,30 +348,28 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="space-y-2">
+            <div className="col-span-2 space-y-2">
               <Label htmlFor="recipe-servings">Rinde</Label>
-              <Input
-                id="recipe-servings"
-                type="number"
-                min={1}
-                max={100}
-                value={servings}
-                onChange={(e) => setServings(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="recipe-servings-unit" className="sm:invisible sm:block">
-                &nbsp;
-              </Label>
-              <Select value={servingsUnit} onValueChange={setServingsUnit}>
-                <SelectTrigger id="recipe-servings-unit" aria-label="Tipo de rinde">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="porciones">Porciones</SelectItem>
-                  <SelectItem value="unidades">Unidades</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Input
+                  id="recipe-servings"
+                  type="number"
+                  min={1}
+                  max={100}
+                  className="w-24 shrink-0"
+                  value={servings}
+                  onChange={(e) => setServings(e.target.value)}
+                />
+                <Select value={servingsUnit} onValueChange={setServingsUnit}>
+                  <SelectTrigger aria-label="Tipo de rinde" className="min-w-0 flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="porciones">Porciones</SelectItem>
+                    <SelectItem value="unidades">Unidades</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="recipe-prep">Preparación (min)</Label>
@@ -424,7 +422,11 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
 
           <div className="space-y-2">
             <Label>Foto</Label>
-            <PhotoUploader photoUrl={photoUrl} onPhotoChange={setPhotoUrl} />
+            <PhotoUploader
+              photoUrl={photoUrl}
+              onPhotoChange={setPhotoUrl}
+              aiPrompt={name}
+            />
           </div>
         </CardContent>
       </Card>
