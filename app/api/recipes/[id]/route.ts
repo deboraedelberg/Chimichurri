@@ -61,6 +61,7 @@ export async function PUT(req: Request, { params }: Params) {
             content: s.content,
             time: s.time ?? null,
             heading: s.heading,
+            photo_url: s.photo_url ?? null,
           })),
         },
       },

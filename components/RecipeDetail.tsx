@@ -180,13 +180,22 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
                         {n}
                       </span>
-                      <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                      <div className="min-w-0 flex-1 space-y-2 pt-0.5">
                         <p className="leading-relaxed">{step.content}</p>
                         {step.time != null && (
                           <p className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
                             {formatMinutes(Math.round(step.time / 60))}
                           </p>
+                        )}
+                        {step.photo_url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={step.photo_url}
+                            alt={`Foto del paso ${n}`}
+                            loading="lazy"
+                            className="max-h-56 rounded-lg border object-cover"
+                          />
                         )}
                       </div>
                     </li>

@@ -195,6 +195,15 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
                 {step?.content}
               </p>
 
+              {step?.photo_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={step.photo_url}
+                  alt="Foto del paso"
+                  className="max-h-64 w-full rounded-lg border border-border/50 object-cover"
+                />
+              )}
+
               {step?.time != null && remaining !== null && (
                 <Card className="border-border/50">
                   <CardContent className="flex flex-col items-center gap-4 p-6">

@@ -9,6 +9,7 @@ export interface StepInput {
   content: string;
   time?: number | null; // seconds
   heading?: boolean;
+  photo_url?: string | null;
 }
 
 export interface RecipeInput {
@@ -37,6 +38,7 @@ export interface StepDTO {
   content: string;
   time: number | null;
   heading: boolean;
+  photo_url: string | null;
 }
 
 export interface RecipeDTO {

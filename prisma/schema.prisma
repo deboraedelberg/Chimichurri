@@ -70,10 +70,11 @@ model Step {
   recipe_id String
   recipe    Recipe @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
 
-  order   Int
-  content String
-  time    Int? // seconds
-  heading Boolean @default(false) // título de sección ("Masa", "Relleno")
+  order     Int
+  content   String
+  time      Int? // seconds
+  heading   Boolean @default(false) // título de sección ("Masa", "Relleno")
+  photo_url String? // foto opcional del paso
 
   @@index([recipe_id])
 }

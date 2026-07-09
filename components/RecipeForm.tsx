@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2 } from "@/components/icons";
+import { ImageIcon, Loader2, Plus, Trash2, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import { TagInput } from "@/components/TagInput";
 import { URLImporter } from "@/components/URLImporter";
 import { UNITS } from "@/lib/conversions";
 import { CATEGORY_GROUPS } from "@/lib/categories";
+import { cn } from "@/lib/utils";
 import {
   DEFAULT_SERVINGS_KEY,
   UNIT_SYSTEM_KEY,
@@ -44,6 +45,7 @@ interface StepRow {
   content: string;
   minutes: string; // temporizador opcional, en minutos
   heading?: boolean;
+  photoUrl?: string | null; // foto opcional del paso
 }
 
 interface RecipeFormProps {
@@ -104,8 +106,39 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
       content: s.content,
       minutes: s.time ? String(Math.round(s.time / 60)) : "",
       heading: s.heading,
+      photoUrl: s.photo_url,
     })) ?? [{ content: "", minutes: "" }]
   );
+
+  // Foto opcional por paso: un solo input de archivo compartido
+  const stepPhotoInputRef = useRef<HTMLInputElement>(null);
+  const stepPhotoTarget = useRef<number | null>(null);
+  const [uploadingStep, setUploadingStep] = useState<number | null>(null);
+
+  function pickStepPhoto(index: number) {
+    stepPhotoTarget.current = index;
+    stepPhotoInputRef.current?.click();
+  }
+
+  async function uploadStepPhoto(file: File) {
+    const index = stepPhotoTarget.current;
+    if (index === null) return;
+    setUploadingStep(index);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Error al subir la imagen");
+      updateStep(index, { photoUrl: data.url });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al subir la imagen");
+    } finally {
+      setUploadingStep(null);
+      stepPhotoTarget.current = null;
+    }
+  }
 
   // Enter agrega una fila nueva y la enfoca
   const ingredientRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -252,6 +285,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           content: row.content.trim(),
           time: !row.heading && row.minutes ? Math.round(Number(row.minutes) * 60) : null,
           heading: !!row.heading,
+          photo_url: row.heading ? null : row.photoUrl ?? null,
         })),
     };
 
@@ -598,52 +632,101 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
               stepNumber += 1;
               const n = stepNumber;
               return (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="mt-3 w-6 shrink-0 text-center text-sm font-semibold text-muted-foreground">
-                    {n}
-                  </span>
-                  <Textarea
-                    ref={(el) => {
-                      stepRefs.current[i] = el;
-                    }}
-                    placeholder="Amasa hasta que quede suave…"
-                    value={row.content}
-                    onChange={(e) => updateStep(i, { content: e.target.value })}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        insertStep(i);
-                      }
-                    }}
-                    rows={2}
-                    className="min-w-0 flex-1"
-                  />
-                  <div className="w-20 shrink-0 space-y-1">
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder="min"
-                      aria-label={`Temporizador del paso ${n} (minutos)`}
-                      value={row.minutes}
-                      onChange={(e) => updateStep(i, { minutes: e.target.value })}
+                <div key={i} className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="mt-3 w-6 shrink-0 text-center text-sm font-semibold text-muted-foreground">
+                      {n}
+                    </span>
+                    <Textarea
+                      ref={(el) => {
+                        stepRefs.current[i] = el;
+                      }}
+                      placeholder="Amasa hasta que quede suave…"
+                      value={row.content}
+                      onChange={(e) => updateStep(i, { content: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          insertStep(i);
+                        }
+                      }}
+                      rows={2}
+                      className="min-w-0 flex-1"
                     />
-                    <p className="text-center text-[10px] text-muted-foreground">tiempo</p>
+                    <div className="w-20 shrink-0 space-y-1">
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="min"
+                        aria-label={`Temporizador del paso ${n} (minutos)`}
+                        value={row.minutes}
+                        onChange={(e) => updateStep(i, { minutes: e.target.value })}
+                      />
+                      <p className="text-center text-[10px] text-muted-foreground">tiempo</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "shrink-0",
+                        row.photoUrl ? "text-primary" : "text-muted-foreground"
+                      )}
+                      disabled={uploadingStep === i}
+                      onClick={() => pickStepPhoto(i)}
+                      aria-label={`Foto del paso ${n}`}
+                    >
+                      {uploadingStep === i ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ImageIcon className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-destructive"
+                      disabled={steps.length === 1}
+                      onClick={() => setSteps((rows) => rows.filter((_, j) => j !== i))}
+                      aria-label={`Quitar paso ${n}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 text-destructive"
-                    disabled={steps.length === 1}
-                    onClick={() => setSteps((rows) => rows.filter((_, j) => j !== i))}
-                    aria-label={`Quitar paso ${n}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {row.photoUrl && (
+                    <div className="relative ml-8 inline-block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={row.photoUrl}
+                        alt={`Foto del paso ${n}`}
+                        className="h-20 rounded-md border object-cover"
+                      />
+                      <button
+                        type="button"
+                        aria-label={`Quitar foto del paso ${n}`}
+                        className="absolute -right-2 -top-2 rounded-full border bg-background p-1 text-destructive shadow-sm"
+                        onClick={() => updateStep(i, { photoUrl: null })}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             });
           })()}
+          <input
+            ref={stepPhotoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadStepPhoto(file);
+              e.target.value = "";
+            }}
+          />
           <p className="text-xs text-muted-foreground">
             Tip: Enter agrega el siguiente paso; Shift+Enter hace un salto de línea.
           </p>
