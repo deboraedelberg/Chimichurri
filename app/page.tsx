@@ -9,6 +9,7 @@ import { toRecipeDTO } from "@/lib/serialize";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecipeCard } from "@/components/RecipeCard";
+import { BulkImporter } from "@/components/BulkImporter";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +34,16 @@ export default async function HomePage() {
           </h1>
           <p className="text-muted-foreground">¿Qué cocinamos hoy?</p>
         </div>
-        <Button asChild size="lg">
-          <Link href="/recipes/new">
-            <Plus />
-            Nueva receta
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-start gap-2">
+          {/* TEMPORAL: carga masiva desde un archivo JSON */}
+          <BulkImporter />
+          <Button asChild size="lg">
+            <Link href="/recipes/new">
+              <Plus />
+              Nueva receta
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {recipes.length === 0 ? (
