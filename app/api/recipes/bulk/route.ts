@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
+import mammoth from "mammoth";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { recipeSchema, RECIPE_INCLUDE } from "@/lib/recipes";
 import { CATEGORY_VALUES } from "@/lib/categories";
+import { parseRecipesFromText, type ImportedRecipe } from "@/lib/import";
 
 /**
- * Carga masiva TEMPORAL: recibe un array JSON de recetas (o { recipes: [...] }),
- * saltea las que ya existen (comparando por título, sin distinguir mayúsculas)
- * y crea el resto. Acepta el mismo formato que POST /api/recipes por receta.
+ * Carga masiva TEMPORAL: recibe un archivo (PDF, Word .docx, TXT o JSON)
+ * con varias recetas, saltea las que ya existen (comparando por título,
+ * sin distinguir mayúsculas) y crea el resto.
  */
 
 /** Tolera exports viejos: descarta categorías/unidades que ya no existen */
@@ -26,23 +28,89 @@ function normalize(raw: unknown): unknown {
   return entry;
 }
 
+function importedToPayload(recipe: ImportedRecipe): unknown {
+  return {
+    name: recipe.name,
+    description: recipe.description,
+    credit: recipe.credit ?? null,
+    servings: recipe.servings ?? 4,
+    servings_unit: recipe.servingsUnit ?? "porciones",
+    prepTime: recipe.prepTime,
+    cookTime: recipe.cookTime,
+    tags: [],
+    ingredients: recipe.ingredients,
+    steps: recipe.steps.map((content) => ({ content })),
+  };
+}
+
+function listFromJson(json: unknown): unknown[] | null {
+  if (Array.isArray(json)) return json;
+  const recipes = (json as { recipes?: unknown })?.recipes;
+  return Array.isArray(recipes) ? recipes : null;
+}
+
+/** Lee el body (archivo multipart o JSON directo) y devuelve las recetas crudas */
+async function readEntries(req: Request): Promise<unknown[] | { error: string }> {
+  const contentType = req.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("multipart/form-data")) {
+    const body = await req.json().catch(() => null);
+    return listFromJson(body) ?? { error: "El body debe ser un array JSON de recetas" };
+  }
+
+  const file = (await req.formData()).get("file");
+  if (!(file instanceof File)) {
+    return { error: "Falta el archivo" };
+  }
+  const name = file.name.toLowerCase();
+
+  if (name.endsWith(".json")) {
+    let json: unknown;
+    try {
+      json = JSON.parse(await file.text());
+    } catch {
+      return { error: "El archivo no es un JSON válido" };
+    }
+    return listFromJson(json) ?? { error: "El JSON debe ser un array de recetas" };
+  }
+
+  let text: string;
+  if (name.endsWith(".pdf")) {
+    const pdf = (await import("pdf-parse/lib/pdf-parse.js")).default;
+    const parsed = await pdf(Buffer.from(await file.arrayBuffer()));
+    text = parsed.text;
+  } else if (name.endsWith(".docx")) {
+    const result = await mammoth.extractRawText({
+      buffer: Buffer.from(await file.arrayBuffer()),
+    });
+    text = result.value;
+  } else if (name.endsWith(".txt") || name.endsWith(".md")) {
+    text = await file.text();
+  } else if (name.endsWith(".doc")) {
+    return { error: "Los .doc viejos no están soportados — guardalo como .docx o PDF" };
+  } else {
+    return { error: "Formato no soportado: PDF, Word (.docx), TXT o JSON" };
+  }
+
+  const recipes = parseRecipesFromText(text);
+  if (recipes.length === 0) {
+    return {
+      error:
+        "No se encontraron recetas en el documento. Cada receta necesita una sección \"Ingredientes\".",
+    };
+  }
+  return recipes.map(importedToPayload);
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null);
-  const list = Array.isArray(body)
-    ? body
-    : Array.isArray((body as { recipes?: unknown[] })?.recipes)
-      ? (body as { recipes: unknown[] }).recipes
-      : null;
-  if (!list) {
-    return NextResponse.json(
-      { error: "El archivo debe ser un array JSON de recetas" },
-      { status: 400 }
-    );
+  const entries = await readEntries(req);
+  if (!Array.isArray(entries)) {
+    return NextResponse.json({ error: entries.error }, { status: 400 });
   }
 
   const existing = await prisma.recipe.findMany({ select: { name: true } });
@@ -52,7 +120,7 @@ export async function POST(req: Request) {
   const skipped: string[] = [];
   const errors: { name: string; error: string }[] = [];
 
-  for (const [i, raw] of list.entries()) {
+  for (const [i, raw] of entries.entries()) {
     const parsed = recipeSchema.safeParse(normalize(raw));
     const label =
       (typeof (raw as { name?: unknown })?.name === "string" &&

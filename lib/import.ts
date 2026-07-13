@@ -368,6 +368,62 @@ export function parseRecipeText(raw: string): ImportedRecipe | null {
   };
 }
 
+/* ------------------------ documento con varias recetas ------------------------ */
+
+/** ¿Puede esta línea ser parte del título de la próxima receta? */
+function isTitleish(line: string): boolean {
+  if (line.length < 2 || line.length > 60) return false;
+  if (BULLET.test(line) || /^\d/.test(line)) return false;
+  if (ING_HEADER.test(line) || STEP_HEADER.test(line)) return false;
+  if (/[.:;,]$/.test(line)) return false; // los pasos suelen terminar en puntuación
+  if (/^[a-záéíóúñ]/.test(line)) return false; // los títulos arrancan en mayúscula o "("
+  return true;
+}
+
+/**
+ * Divide el texto de un documento (PDF, Word, TXT) con varias recetas en
+ * bloques de una. Cada "Ingredientes" marca una receta; su título son las
+ * pocas líneas cortas que lo preceden.
+ */
+export function parseRecipesFromText(raw: string): ImportedRecipe[] {
+  const lines = raw.split(/\r?\n/).map((l) => l.trim());
+  const headers: number[] = [];
+  lines.forEach((line, i) => {
+    if (ING_HEADER.test(line)) headers.push(i);
+  });
+
+  if (headers.length <= 1) {
+    const single = parseRecipeText(raw);
+    return single ? [single] : [];
+  }
+
+  // Arranque de cada receta: hasta 3 líneas de título arriba de su "Ingredientes"
+  const starts = headers.map((h, k) => {
+    if (k === 0) return 0;
+    let start = h;
+    let picked = 0;
+    for (let i = h - 1; i > headers[k - 1] && picked < 3; i--) {
+      const line = lines[i];
+      if (!line) {
+        if (picked > 0) break; // hueco arriba del bloque de título
+        continue;
+      }
+      if (!isTitleish(line)) break;
+      start = i;
+      picked += 1;
+    }
+    return start;
+  });
+
+  const recipes: ImportedRecipe[] = [];
+  starts.forEach((start, k) => {
+    const end = k + 1 < starts.length ? starts[k + 1] : lines.length;
+    const recipe = parseRecipeText(lines.slice(start, end).join("\n"));
+    if (recipe) recipes.push(recipe);
+  });
+  return recipes;
+}
+
 /* ------------------------------- guard de URL ------------------------------- */
 
 const BLOCKED_HOSTS = /^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.)|(\.local|\.internal)$/i;

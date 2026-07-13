@@ -13,8 +13,8 @@ interface BulkResult {
 }
 
 /**
- * Botón TEMPORAL de carga masiva: sube un archivo JSON con un array de
- * recetas y crea las que todavía no existen (compara por título).
+ * Botón TEMPORAL de carga masiva: sube un archivo (PDF, Word .docx, TXT
+ * o JSON) con recetas y crea las que todavía no existen (compara por título).
  */
 export function BulkImporter() {
   const router = useRouter();
@@ -28,17 +28,11 @@ export function BulkImporter() {
     setSummary(null);
     setError(null);
     try {
-      const text = await file.text();
-      let json: unknown;
-      try {
-        json = JSON.parse(text);
-      } catch {
-        throw new Error("El archivo no es un JSON válido");
-      }
+      const formData = new FormData();
+      formData.append("file", file);
       const res = await fetch("/api/recipes/bulk", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(json),
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudieron importar las recetas");
@@ -69,7 +63,7 @@ export function BulkImporter() {
       <input
         ref={inputRef}
         type="file"
-        accept=".json,application/json"
+        accept=".pdf,.docx,.txt,.md,.json"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
