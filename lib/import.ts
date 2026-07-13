@@ -108,6 +108,7 @@ const UNIT_WORDS: Record<string, string> = {
 /** "1", "1.5", "1,5", "1/2", "½" -> número; null si no es cantidad */
 function tokenToNumber(token: string): number | null {
   if (token in UNICODE_FRACTIONS) return UNICODE_FRACTIONS[token];
+  if (/^medi[oa]$/i.test(token)) return 0.5;
   // "1½"
   const uni = token.match(/^(\d+)([¼½¾⅓⅔⅛⅜⅝⅞])$/);
   if (uni) return Number(uni[1]) + UNICODE_FRACTIONS[uni[2]];
@@ -125,10 +126,19 @@ export function parseIngredient(raw: string): ImportedIngredient | null {
   const text = cleanText(raw);
   if (!text) return null;
 
-  // "Harina leudante, cantidad necesaria" / "Sal, c/n" / "Pimienta a gusto" -> unidad C/N
-  const cn = text.match(/^(.*?)[,:\s]*(?:\bcantidad necesaria\b|c\/n|\ba gusto\b)[.\s]*$/i);
+  // "Harina leudante, cantidad necesaria" / "Sal, c/n" / "Pimienta a gusto" /
+  // "Aceite, un chorrito" -> unidad C/N
+  const cn = text.match(
+    /^(.*?)[,:\s]*(?:\bcantidad necesaria\b|c\/n|\ba gusto\b|\bun chorrito\b)[.\s]*$/i
+  );
   if (cn && cn[1].trim()) {
     return { item: cn[1].trim().replace(/[,:]$/, ""), amount: 1, unit: "cn" };
+  }
+
+  // "Un chorrito de aceite" -> aceite, C/N
+  const chorrito = text.match(/^(?:un\s+)?chorrito\s+(?:de\s+)?(.+?)[.\s]*$/i);
+  if (chorrito) {
+    return { item: chorrito[1].trim(), amount: 1, unit: "cn" };
   }
 
   const tokens = text.split(/\s+/);
@@ -139,11 +149,13 @@ export function parseIngredient(raw: string): ImportedIngredient | null {
   if (first !== null) {
     amount = first;
     index = 1;
-    // cantidades compuestas: "1 1/2", "1 ½"
-    const second = tokenToNumber(tokens[1] ?? "");
+    // cantidades compuestas: "1 1/2", "1 ½", "1 y 1/2", "1 y medio"
+    let next = index;
+    if ((tokens[next] ?? "").toLowerCase() === "y") next += 1;
+    const second = tokenToNumber(tokens[next] ?? "");
     if (second !== null && second < 1) {
       amount += second;
-      index = 2;
+      index = next + 1;
     }
   }
 
