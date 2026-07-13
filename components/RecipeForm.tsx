@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ImageIcon, Loader2, Plus, Trash2, X } from "@/components/icons";
+import { GripVertical, ImageIcon, Loader2, Plus, Trash2, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -201,6 +201,42 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
 
   function updateStep(index: number, patch: Partial<StepRow>) {
     setSteps((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  }
+
+  // Reordenar ingredientes arrastrando desde el ícono (mouse y táctil)
+  const ingredientRowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const dragIndex = useRef<number | null>(null);
+  const [draggingIngredient, setDraggingIngredient] = useState<number | null>(null);
+
+  function startIngredientDrag(e: React.PointerEvent<HTMLButtonElement>, index: number) {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragIndex.current = index;
+    setDraggingIngredient(index);
+  }
+
+  function moveIngredientDrag(e: React.PointerEvent<HTMLButtonElement>) {
+    const from = dragIndex.current;
+    if (from === null) return;
+    const to = ingredientRowRefs.current.findIndex((el) => {
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      return e.clientY >= rect.top && e.clientY <= rect.bottom;
+    });
+    if (to === -1 || to === from) return;
+    dragIndex.current = to;
+    setDraggingIngredient(to);
+    setIngredients((rows) => {
+      const next = [...rows];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  function endIngredientDrag() {
+    dragIndex.current = null;
+    setDraggingIngredient(null);
   }
 
   function insertIngredient(after: number, heading = false) {
@@ -472,7 +508,27 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
         <CardContent className="space-y-3">
           {ingredients.map((row, i) =>
             row.heading ? (
-              <div key={i} className="flex items-center gap-2 pt-2">
+              <div
+                key={i}
+                ref={(el) => {
+                  ingredientRowRefs.current[i] = el;
+                }}
+                className={cn(
+                  "flex items-center gap-2 pt-2",
+                  draggingIngredient === i && "opacity-60"
+                )}
+              >
+                <button
+                  type="button"
+                  aria-label="Reordenar título"
+                  className="shrink-0 cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
+                  onPointerDown={(e) => startIngredientDrag(e, i)}
+                  onPointerMove={moveIngredientDrag}
+                  onPointerUp={endIngredientDrag}
+                  onPointerCancel={endIngredientDrag}
+                >
+                  <GripVertical className="h-4 w-4" />
+                </button>
                 <Input
                   ref={(el) => {
                     ingredientRefs.current[i] = el;
@@ -500,7 +556,27 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                 </Button>
               </div>
             ) : (
-              <div key={i} className="flex items-center gap-2">
+              <div
+                key={i}
+                ref={(el) => {
+                  ingredientRowRefs.current[i] = el;
+                }}
+                className={cn(
+                  "flex items-center gap-2",
+                  draggingIngredient === i && "opacity-60"
+                )}
+              >
+                <button
+                  type="button"
+                  aria-label="Reordenar ingrediente"
+                  className="shrink-0 cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
+                  onPointerDown={(e) => startIngredientDrag(e, i)}
+                  onPointerMove={moveIngredientDrag}
+                  onPointerUp={endIngredientDrag}
+                  onPointerCancel={endIngredientDrag}
+                >
+                  <GripVertical className="h-4 w-4" />
+                </button>
                 <Input
                   ref={(el) => {
                     ingredientRefs.current[i] = el;

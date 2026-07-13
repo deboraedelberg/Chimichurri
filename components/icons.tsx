@@ -14,6 +14,7 @@ import {
   Clock01Icon,
   Copy01Icon,
   Delete02Icon,
+  DragDropVerticalIcon,
   Image01Icon,
   Link02Icon,
   Loading03Icon,
@@ -65,6 +66,7 @@ export const LogOut = make(Logout03Icon);
 export const Menu = make(Menu01Icon);
 export const Plus = make(PlusSignIcon);
 export const Trash2 = make(Delete02Icon);
+export const GripVertical = make(DragDropVerticalIcon);
 export const Pencil = make(PencilEdit01Icon);
 export const Share2 = make(Share08Icon);
 export const Loader2 = make(Loading03Icon);
