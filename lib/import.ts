@@ -16,6 +16,7 @@ export interface ImportedIngredient {
 
 export interface ImportedRecipe {
   name: string;
+  category?: string | null; // slug de lib/categories.ts
   description: string | null;
   image: string | null;
   servings: number | null;
@@ -270,6 +271,27 @@ export function parseRecipeFromHtml(html: string, sourceUrl: string): ImportedRe
 const ING_HEADER = /^ingredientes?\b/i;
 const STEP_HEADER = /^(preparaci[oó]n|pasos?|instrucciones|elaboraci[oó]n|procedimiento)\b/i;
 const BULLET = /^[-*•·▪○●➤>]+\s*/;
+// El OCR suele leer el bullet "•" como una letra o símbolo suelto ("e 3 huevos")
+const OCR_BULLET = /^[eE©«®°¢=]\s+/;
+
+/**
+ * Subtítulos de sección de un libro/cuaderno ("Recetas dulces", "Postres").
+ * No son el título de la receta; cuando se puede, se mapean a una categoría.
+ */
+const CATEGORY_HINTS: [RegExp, string | null][] = [
+  [/^recetas?\s+dulces?$/i, null],
+  [/^recetas?\s+saladas?$/i, null],
+  [/^postres$/i, "dulce-postres"],
+  [/^tortas(\s+y\s+budines)?$/i, "dulce-tortas"],
+  [/^budines$/i, "dulce-tortas"],
+  [/^galletitas(\s+y\s+alfajores)?$/i, "dulce-galletitas"],
+  [/^alfajores$/i, "dulce-galletitas"],
+  [/^panes(\s+y\s+facturas)?$/i, "otros-panes"],
+  [/^facturas$/i, "otros-panes"],
+  [/^bebidas$/i, "otros-bebidas"],
+  [/^entradas(\s+y\s+snacks)?$/i, "salado-entradas"],
+  [/^comidas$/i, "salado-comidas"],
+];
 
 /** "para 48 knishes" / "(para 4 porciones)" -> rinde + tipo */
 function parseYieldFromText(line: string): { servings: number; unit: "porciones" | "unidades" } | null {
@@ -295,6 +317,7 @@ export function parseRecipeText(raw: string): ImportedRecipe | null {
   if (lines.length === 0) return null;
 
   let name = "";
+  let category: string | null = null;
   let credit: string | null = null;
   let servings: number | null = null;
   let servingsUnit: "porciones" | "unidades" | undefined;
@@ -319,6 +342,11 @@ export function parseRecipeText(raw: string): ImportedRecipe | null {
     }
 
     if (section === "pre") {
+      const hint = CATEGORY_HINTS.find(([re]) => re.test(line));
+      if (hint) {
+        if (hint[1]) category = hint[1];
+        continue; // subtítulo de sección del libro, no es el título de la receta
+      }
       const creditMatch = line.match(/^\(?\s*receta de\s+(.+?)\)?\.?$/i);
       if (creditMatch) {
         credit = creditMatch[1].trim();
@@ -336,7 +364,7 @@ export function parseRecipeText(raw: string): ImportedRecipe | null {
       }
       descLines.push(line);
     } else if (section === "ing") {
-      const clean = line.replace(BULLET, "").trim();
+      const clean = line.replace(BULLET, "").replace(OCR_BULLET, "").trim();
       if (!clean) continue;
       // "Tapitas:" -> título de sección dentro de los ingredientes
       if (/^.{2,40}:$/.test(clean)) {
@@ -346,7 +374,11 @@ export function parseRecipeText(raw: string): ImportedRecipe | null {
       const ing = parseIngredient(clean);
       if (ing) ingredients.push(ing);
     } else {
-      const clean = line.replace(BULLET, "").replace(/^\d+\s*[.)]\s*/, "").trim();
+      const clean = line
+        .replace(BULLET, "")
+        .replace(OCR_BULLET, "")
+        .replace(/^\d+\s*[.)]\s*/, "")
+        .trim();
       if (clean) steps.push(clean);
     }
   }
@@ -355,6 +387,7 @@ export function parseRecipeText(raw: string): ImportedRecipe | null {
 
   return {
     name,
+    category,
     description: descLines.join(" ") || null,
     image: null,
     servings,

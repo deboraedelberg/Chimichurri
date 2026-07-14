@@ -264,6 +264,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
   /** Precarga el formulario con una receta importada (URL u OCR) */
   function applyImported(recipe: ImportedRecipe) {
     if (recipe.name) setName(recipe.name);
+    if (recipe.category) setCategory(recipe.category);
     if (recipe.credit) setCredit(recipe.credit);
     if (recipe.description) setDescription(recipe.description);
     if (recipe.image) setPhotoUrl(recipe.image);
