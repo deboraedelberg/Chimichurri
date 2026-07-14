@@ -3,6 +3,7 @@ import { Clock, User, Users, UtensilsCrossed } from "@/components/icons";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { RecipeCardMenu } from "@/components/RecipeCardMenu";
 import { categoryShortLabel } from "@/lib/categories";
 import { formatMinutes } from "@/lib/utils";
 import type { RecipeDTO } from "@/lib/types";
@@ -33,6 +34,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
               {category}
             </Badge>
           )}
+          <div className="absolute right-2 top-2">
+            <RecipeCardMenu id={recipe.id} name={recipe.name} />
+          </div>
         </div>
         <CardContent className="space-y-2 p-4">
           <h3 className="line-clamp-1 font-semibold leading-tight">{recipe.name}</h3>
