@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { ImageIcon, Loader2, Sparkles, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
+import { uploadImage } from "@/lib/upload-client";
 
 interface PhotoUploaderProps {
   photoUrl: string | null;
@@ -26,12 +27,7 @@ export function PhotoUploader({ photoUrl, onPhotoChange, aiPrompt }: PhotoUpload
     setUploading(true);
     setError(null);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error al subir la imagen");
-      onPhotoChange(data.url);
+      onPhotoChange(await uploadImage(file));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al subir la imagen");
     } finally {

@@ -24,6 +24,7 @@ import { PhotoUploader } from "@/components/PhotoUploader";
 import { TagInput } from "@/components/TagInput";
 import { URLImporter } from "@/components/URLImporter";
 import { UNITS } from "@/lib/conversions";
+import { uploadImage } from "@/lib/upload-client";
 import { CATEGORY_GROUPS } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import {
@@ -126,12 +127,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
     setUploadingStep(index);
     setError(null);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error al subir la imagen");
-      updateStep(index, { photoUrl: data.url });
+      updateStep(index, { photoUrl: await uploadImage(file) });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al subir la imagen");
     } finally {

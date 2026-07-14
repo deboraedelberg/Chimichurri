@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_SIZE = 4.5 * 1024 * 1024; // límite de body de Vercel (~4,5 MB)
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic"];
 
 export async function POST(req: Request) {
@@ -26,14 +26,27 @@ export async function POST(req: Request) {
     );
   }
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "La imagen debe pesar menos de 5 MB" }, { status: 400 });
+    return NextResponse.json({ error: "La imagen debe pesar menos de 4,5 MB" }, { status: 400 });
+  }
+
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json(
+      { error: "Falta configurar el almacenamiento de fotos (BLOB_READ_WRITE_TOKEN)" },
+      { status: 500 }
+    );
   }
 
   const ext = file.name.split(".").pop() ?? "jpg";
-  const blob = await put(`recipes/${session.user.id}/${Date.now()}.${ext}`, file, {
-    access: "public",
-    token: process.env.BLOB_READ_WRITE_TOKEN,
-  });
-
-  return NextResponse.json({ url: blob.url });
+  try {
+    const blob = await put(`recipes/${session.user.id}/${Date.now()}.${ext}`, file, {
+      access: "public",
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
+    return NextResponse.json({ url: blob.url });
+  } catch {
+    return NextResponse.json(
+      { error: "No se pudo guardar la imagen en el almacenamiento" },
+      { status: 502 }
+    );
+  }
 }
