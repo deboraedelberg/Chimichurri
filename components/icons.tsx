@@ -27,6 +27,7 @@ import {
   PlayIcon,
   PlusSignIcon,
   RotateClockwiseIcon,
+  Search01Icon,
   Settings01Icon,
   Share08Icon,
   ShoppingBasket01Icon,
@@ -88,6 +89,7 @@ export const Copy = make(Copy01Icon);
 export const Pause = make(PauseIcon);
 export const Play = make(PlayIcon);
 export const RotateCcw = make(RotateClockwiseIcon);
+export const Search = make(Search01Icon);
 export const Settings = make(Settings01Icon);
 export const Sun = make(Sun01Icon);
 export const Moon = make(Moon02Icon);

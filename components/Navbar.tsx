@@ -1,10 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { ChefHat, LogOut, Menu, Plus, Settings } from "@/components/icons";
 
+import { SearchBar } from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -68,6 +70,15 @@ export function Navbar() {
           <span className="text-lg tracking-tight">Chimichurri</span>
         </Link>
 
+        {/* Buscador desktop, entre el logo y los menús */}
+        {session?.user && (
+          <div className="hidden flex-1 justify-center px-4 md:flex">
+            <Suspense fallback={null}>
+              <SearchBar className="w-full max-w-md" />
+            </Suspense>
+          </div>
+        )}
+
         {session?.user && (
           <div className="flex items-center gap-2">
             {/* Menú mobile */}
@@ -117,6 +128,15 @@ export function Navbar() {
           </div>
         )}
       </div>
+
+      {/* Buscador mobile: segunda fila, siempre visible */}
+      {session?.user && (
+        <div className="container pb-3 md:hidden">
+          <Suspense fallback={null}>
+            <SearchBar />
+          </Suspense>
+        </div>
+      )}
     </header>
   );
 }

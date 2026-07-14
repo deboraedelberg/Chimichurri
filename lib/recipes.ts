@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_VALUES } from "@/lib/categories";
 
@@ -38,6 +39,40 @@ export const RECIPE_INCLUDE = {
   steps: { orderBy: { order: "asc" as const } },
   user: { select: { name: true, email: true } },
 } as const;
+
+/** Valida el slug de categoría venido de la URL; inválido -> null (sin filtro) */
+export function parseCategoria(
+  raw: string | string[] | null | undefined
+): string | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value) return null;
+  return (CATEGORY_VALUES as readonly string[]).includes(value) ? value : null;
+}
+
+/**
+ * Filtro compartido entre la home y GET /api/recipes.
+ * Limitaciones conocidas: el tag matchea exacto (no "contains") y
+ * "insensitive" no pliega acentos ("ñoquis" ≠ "noquis").
+ */
+export function buildRecipeWhere(
+  qRaw?: string | null,
+  categoria?: string | null
+): Prisma.RecipeWhereInput | undefined {
+  const q = qRaw?.trim();
+  const where: Prisma.RecipeWhereInput = {
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { tags: { has: q.toLowerCase() } },
+            { ingredients: { some: { item: { contains: q, mode: "insensitive" } } } },
+          ],
+        }
+      : {}),
+    ...(categoria ? { category: categoria } : {}),
+  };
+  return Object.keys(where).length ? where : undefined;
+}
 
 export type Permission = "owner" | "edit" | "view" | null;
 

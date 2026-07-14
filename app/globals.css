@@ -83,3 +83,13 @@
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+@layer utilities {
+  /* Carruseles (chips de categorías): scroll horizontal sin barra visible */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

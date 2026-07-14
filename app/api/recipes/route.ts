@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { recipeSchema, RECIPE_INCLUDE } from "@/lib/recipes";
+import {
+  recipeSchema,
+  RECIPE_INCLUDE,
+  buildRecipeWhere,
+  parseCategoria,
+} from "@/lib/recipes";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -10,18 +15,13 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q")?.trim();
 
   // Sitio familiar: todas las recetas son visibles para todos
   const recipes = await prisma.recipe.findMany({
-    where: q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { tags: { has: q.toLowerCase() } },
-          ],
-        }
-      : undefined,
+    where: buildRecipeWhere(
+      searchParams.get("q"),
+      parseCategoria(searchParams.get("categoria"))
+    ),
     include: RECIPE_INCLUDE,
     orderBy: { updatedAt: "desc" },
   });

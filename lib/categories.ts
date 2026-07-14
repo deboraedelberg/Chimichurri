@@ -7,6 +7,7 @@
 export interface CategoryItem {
   value: string; // slug guardado en Recipe.category
   label: string;
+  chip?: string; // etiqueta corta para los chips de la home (si difiere de label)
 }
 
 export interface CategoryGroup {
@@ -21,7 +22,7 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
       { value: "salado-comidas", label: "Comidas" },
       { value: "salado-entradas", label: "Entradas y snacks" },
       { value: "salado-salsas", label: "Salsas y aderezos" },
-      { value: "salado-basicos", label: "Masas y básicos" },
+      { value: "salado-basicos", label: "Masas y básicos", chip: "Masas saladas" },
     ],
   },
   {
@@ -31,7 +32,7 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
       { value: "dulce-postres", label: "Postres" },
       { value: "dulce-galletitas", label: "Galletitas y alfajores" },
       { value: "dulce-salsas", label: "Salsas y cremas" },
-      { value: "dulce-basicos", label: "Masas y básicos" },
+      { value: "dulce-basicos", label: "Masas y básicos", chip: "Masas dulces" },
     ],
   },
   {
@@ -55,6 +56,11 @@ export function categoryLabel(value: string | null | undefined): string | null {
     if (item) return `${group.label} · ${item.label}`;
   }
   return null;
+}
+
+/** Etiqueta corta para chips: usa `chip` si existe, si no `label` */
+export function categoryChipLabel(item: CategoryItem): string {
+  return item.chip ?? item.label;
 }
 
 /** Solo el nombre de la subcategoría: "dulce-tortas" -> "Tortas y budines" */
