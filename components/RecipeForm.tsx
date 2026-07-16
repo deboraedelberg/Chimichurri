@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GripVertical, ImageIcon, Loader2, Plus, Trash2, X } from "@/components/icons";
+import { GripVertical, ImagePlus, Loader2, Plus, Trash2, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -752,7 +752,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                       {uploadingStep === i ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <ImageIcon className="h-4 w-4" />
+                        <ImagePlus className="h-4 w-4" />
                       )}
                     </Button>
                     <Button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ImageIcon, Loader2, Sparkles, X } from "@/components/icons";
+import { ImagePlus, Loader2, Sparkles, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
 import { uploadImage } from "@/lib/upload-client";
@@ -99,7 +99,7 @@ export function PhotoUploader({ photoUrl, onPhotoChange, aiPrompt }: PhotoUpload
             disabled={uploading || generating}
             onClick={() => inputRef.current?.click()}
           >
-            {uploading ? <Loader2 className="animate-spin" /> : <ImageIcon />}
+            {uploading ? <Loader2 className="animate-spin" /> : <ImagePlus />}
             {uploading ? "Subiendo…" : "Subir foto"}
           </Button>
           <Button

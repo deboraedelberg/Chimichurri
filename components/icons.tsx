@@ -16,6 +16,7 @@ import {
   Delete02Icon,
   DragDropVerticalIcon,
   Image01Icon,
+  ImageAdd01Icon,
   Link02Icon,
   Loading03Icon,
   Logout03Icon,
@@ -82,6 +83,7 @@ export const ChevronRight = make(ArrowRight01Icon);
 export const Circle = make(CircleIcon);
 export const Camera = make(Camera01Icon);
 export const ImageIcon = make(Image01Icon);
+export const ImagePlus = make(ImageAdd01Icon);
 export const ScanText = make(AiScanIcon);
 export const Link2 = make(Link02Icon);
 export const ShoppingBasket = make(ShoppingBasket01Icon);
