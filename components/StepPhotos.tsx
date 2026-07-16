@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "@/components/icons";
+import { ChevronLeft, ChevronRight, X } from "@/components/icons";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface StepPhotosProps {
@@ -100,8 +105,17 @@ export function StepPhotos({
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="dark flex h-[100dvh] w-screen max-w-none items-center justify-center border-0 bg-black/95 p-0 shadow-none sm:rounded-none">
+        <DialogContent
+          hideClose
+          className="dark flex h-[100dvh] w-screen max-w-none items-center justify-center border-0 bg-black/95 p-0 shadow-none sm:rounded-none"
+        >
           <DialogTitle className="sr-only">{alt}</DialogTitle>
+          <DialogClose
+            aria-label="Cerrar"
+            className="absolute right-3 top-3 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+          >
+            <X className="h-6 w-6" />
+          </DialogClose>
           <div
             ref={lightboxRef}
             className="flex h-full w-full snap-x snap-mandatory overflow-x-auto"
