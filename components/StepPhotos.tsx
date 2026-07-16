@@ -40,6 +40,22 @@ export function StepPhotos({
     });
   }, [open]);
 
+  // Con el lightbox abierto, las flechas del teclado navegan entre fotos
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const el = lightboxRef.current;
+      el?.scrollBy({
+        left: (e.key === "ArrowLeft" ? -1 : 1) * el.clientWidth,
+        behavior: "smooth",
+      });
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
   if (photos.length === 0) return null;
   const multiple = photos.length > 1;
 

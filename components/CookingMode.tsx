@@ -121,6 +121,36 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
     setTimeout(() => router.push(`/recipes/${recipe.id}`), 900);
   }
 
+  // Navegación con teclado: ← → entre pasos, Enter avanza (y termina en el último)
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      // No interferir con el lightbox de fotos ni otros modales abiertos
+      if (document.querySelector('[role="dialog"][data-state="open"]')) return;
+
+      if (e.key === "ArrowLeft") {
+        if (index >= 0) {
+          e.preventDefault();
+          goTo(index - 1);
+        }
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (index < 0) goTo(0);
+        else if (!isLastStep) goTo(index + 1);
+      } else if (e.key === "Enter") {
+        // Si el foco está en un botón/checkbox/link, que Enter haga lo suyo
+        const target = e.target as HTMLElement | null;
+        if (target?.closest("button, a, input, textarea, select, [role='checkbox']")) return;
+        e.preventDefault();
+        if (index < 0) goTo(0);
+        else if (isLastStep) finish();
+        else goTo(index + 1);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, isLastStep, finishing]);
+
   const progress =
     index < 0 ? 0 : Math.round(((index + 1) / navSteps.length) * 100);
 
