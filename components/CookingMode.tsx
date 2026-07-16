@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StepPhotos } from "@/components/StepPhotos";
-import { formatAmount, formatSeconds, cn } from "@/lib/utils";
-import { UNITS } from "@/lib/conversions";
+import { formatQuantity, formatSeconds, cn } from "@/lib/utils";
 import { stepPhotos, type RecipeDTO } from "@/lib/types";
 
 /**
@@ -174,7 +173,7 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
                         ) : (
                           <>
                             <span className="font-medium tabular-nums">
-                              {formatAmount(ing.amount)} {UNITS[ing.unit]?.label ?? ing.unit}
+                              {formatQuantity(ing.amount, ing.unit)}
                             </span>{" "}
                             {ing.item}
                           </>

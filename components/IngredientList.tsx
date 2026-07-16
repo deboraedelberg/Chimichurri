@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UNITS, compatibleUnits, convert } from "@/lib/conversions";
-import { formatAmount, cn } from "@/lib/utils";
+import { formatQuantity, cn } from "@/lib/utils";
 import type { IngredientDTO } from "@/lib/types";
 
 interface IngredientListProps {
@@ -61,13 +61,12 @@ export function IngredientList({ ingredients, multiplier }: IngredientListProps)
         const amount = converted ?? ing.amount * multiplier;
         const options = compatibleUnits(ing.unit);
         const convertible = options.length > 1;
-        const unitLabel = UNITS[displayUnit]?.label ?? displayUnit;
 
         return (
           <li key={ing.id} className={rowClass}>
             <span className="min-w-0 flex-1">
               <span className="font-semibold tabular-nums">
-                {formatAmount(amount)} {unitLabel}
+                {formatQuantity(amount, displayUnit)}
               </span>{" "}
               {ing.item}
             </span>

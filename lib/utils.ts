@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { UNITS } from "@/lib/conversions";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -35,6 +36,15 @@ export function formatAmount(amount: number): string {
   }
 
   return String(whole);
+}
+
+/**
+ * Cantidad + unidad para mostrar: "400 g", "2 cdas"… pero "2" a secas cuando
+ * la unidad es "unidad" (se lee "2 huevos", no "2 unidad huevos").
+ */
+export function formatQuantity(amount: number, unit: string): string {
+  const n = formatAmount(amount);
+  return unit === "unit" ? n : `${n} ${UNITS[unit]?.label ?? unit}`;
 }
 
 /** "1h 25m" style display for minutes */
