@@ -15,6 +15,7 @@ export const stepSchema = z.object({
   time: z.coerce.number().int().positive().nullish(),
   heading: z.boolean().optional().default(false),
   photo_url: z.string().trim().url().nullish().or(z.literal("").transform(() => null)),
+  photo_urls: z.array(z.string().trim().url()).max(3, "Máximo 3 fotos por paso").optional().default([]),
 });
 
 export const recipeSchema = z.object({

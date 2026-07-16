@@ -20,9 +20,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { IngredientList } from "@/components/IngredientList";
 import { ScalingControl } from "@/components/ScalingControl";
+import { StepPhotos } from "@/components/StepPhotos";
 import { categoryLabel } from "@/lib/categories";
 import { formatMinutes } from "@/lib/utils";
-import type { RecipeDTO } from "@/lib/types";
+import { stepPhotos, type RecipeDTO } from "@/lib/types";
 
 export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
   const router = useRouter();
@@ -177,10 +178,10 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
                   n += 1;
                   return (
                     <li key={step.id} className="flex gap-3">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                         {n}
                       </span>
-                      <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+                      <div className="min-w-0 flex-1 space-y-2 pt-1">
                         <p className="leading-relaxed">{step.content}</p>
                         {step.time != null && (
                           <p className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -188,15 +189,11 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
                             {formatMinutes(Math.round(step.time / 60))}
                           </p>
                         )}
-                        {step.photo_url && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={step.photo_url}
-                            alt={`Foto del paso ${n}`}
-                            loading="lazy"
-                            className="max-h-56 rounded-lg border object-cover"
-                          />
-                        )}
+                        <StepPhotos
+                          photos={stepPhotos(step)}
+                          alt={`Foto del paso ${n}`}
+                          heightClass="h-40 sm:h-52"
+                        />
                       </div>
                     </li>
                   );

@@ -2,6 +2,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AiScanIcon,
   Alert02Icon,
+  ArrowDataTransferHorizontalIcon,
   ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -81,6 +82,7 @@ export const ChevronUp = make(ArrowUp01Icon);
 export const ChevronLeft = make(ArrowLeft01Icon);
 export const ChevronRight = make(ArrowRight01Icon);
 export const Circle = make(CircleIcon);
+export const ArrowLeftRight = make(ArrowDataTransferHorizontalIcon);
 export const Camera = make(Camera01Icon);
 export const ImageIcon = make(Image01Icon);
 export const ImagePlus = make(ImageAdd01Icon);

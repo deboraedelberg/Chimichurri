@@ -9,7 +9,8 @@ export interface StepInput {
   content: string;
   time?: number | null; // seconds
   heading?: boolean;
-  photo_url?: string | null;
+  photo_url?: string | null; // legado
+  photo_urls?: string[]; // hasta 3 fotos
 }
 
 export interface RecipeInput {
@@ -38,7 +39,17 @@ export interface StepDTO {
   content: string;
   time: number | null;
   heading: boolean;
-  photo_url: string | null;
+  photo_url: string | null; // legado: pasos guardados antes de photo_urls
+  photo_urls: string[];
+}
+
+/** Fotos de un paso, uniendo el campo nuevo (photo_urls) con el legado (photo_url). */
+export function stepPhotos(step: {
+  photo_url?: string | null;
+  photo_urls?: string[] | null;
+}): string[] {
+  if (step.photo_urls && step.photo_urls.length > 0) return step.photo_urls;
+  return step.photo_url ? [step.photo_url] : [];
 }
 
 export interface RecipeDTO {

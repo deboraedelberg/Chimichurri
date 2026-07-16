@@ -33,7 +33,7 @@ import {
   defaultUnitFor,
 } from "@/components/SettingsSections";
 import type { ImportedRecipe } from "@/lib/import";
-import type { RecipeDTO } from "@/lib/types";
+import { stepPhotos, type RecipeDTO } from "@/lib/types";
 
 interface IngredientRow {
   item: string;
@@ -42,11 +42,13 @@ interface IngredientRow {
   heading?: boolean; // título de sección ("Masa", "Relleno")
 }
 
+const MAX_STEP_PHOTOS = 3;
+
 interface StepRow {
   content: string;
   minutes: string; // temporizador opcional, en minutos
   heading?: boolean;
-  photoUrl?: string | null; // foto opcional del paso
+  photoUrls?: string[]; // hasta 3 fotos opcionales del paso
 }
 
 interface RecipeFormProps {
@@ -107,7 +109,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
       content: s.content,
       minutes: s.time ? String(Math.round(s.time / 60)) : "",
       heading: s.heading,
-      photoUrl: s.photo_url,
+      photoUrls: stepPhotos(s),
     })) ?? [{ content: "", minutes: "" }]
   );
 
@@ -121,13 +123,24 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
     stepPhotoInputRef.current?.click();
   }
 
-  async function uploadStepPhoto(file: File) {
+  async function uploadStepPhotos(files: File[]) {
     const index = stepPhotoTarget.current;
     if (index === null) return;
+    const remaining = MAX_STEP_PHOTOS - (steps[index]?.photoUrls?.length ?? 0);
+    if (remaining <= 0) return;
     setUploadingStep(index);
     setError(null);
     try {
-      updateStep(index, { photoUrl: await uploadImage(file) });
+      for (const file of files.slice(0, remaining)) {
+        const url = await uploadImage(file);
+        setSteps((rows) =>
+          rows.map((row, i) =>
+            i === index
+              ? { ...row, photoUrls: [...(row.photoUrls ?? []), url].slice(0, MAX_STEP_PHOTOS) }
+              : row
+          )
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al subir la imagen");
     } finally {
@@ -318,7 +331,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           content: row.content.trim(),
           time: !row.heading && row.minutes ? Math.round(Number(row.minutes) * 60) : null,
           heading: !!row.heading,
-          photo_url: row.heading ? null : row.photoUrl ?? null,
+          photo_urls: row.heading ? [] : row.photoUrls ?? [],
         })),
     };
 
@@ -704,6 +717,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
               }
               stepNumber += 1;
               const n = stepNumber;
+              const photos = row.photoUrls ?? [];
               return (
                 <div key={i} className="space-y-2">
                   <div className="flex items-start gap-2">
@@ -743,11 +757,11 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                       size="icon"
                       className={cn(
                         "shrink-0",
-                        row.photoUrl ? "text-primary" : "text-muted-foreground"
+                        photos.length > 0 ? "text-primary" : "text-muted-foreground"
                       )}
-                      disabled={uploadingStep === i}
+                      disabled={uploadingStep === i || photos.length >= MAX_STEP_PHOTOS}
                       onClick={() => pickStepPhoto(i)}
-                      aria-label={`Foto del paso ${n}`}
+                      aria-label={`Agregar foto al paso ${n} (${photos.length} de ${MAX_STEP_PHOTOS})`}
                     >
                       {uploadingStep === i ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -767,22 +781,30 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  {row.photoUrl && (
-                    <div className="relative ml-8 inline-block">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={row.photoUrl}
-                        alt={`Foto del paso ${n}`}
-                        className="h-20 rounded-md border object-cover"
-                      />
-                      <button
-                        type="button"
-                        aria-label={`Quitar foto del paso ${n}`}
-                        className="absolute -right-2 -top-2 rounded-full border bg-background p-1 text-destructive shadow-sm"
-                        onClick={() => updateStep(i, { photoUrl: null })}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                  {photos.length > 0 && (
+                    <div className="ml-8 flex flex-wrap gap-3">
+                      {photos.map((url, k) => (
+                        <div key={`${url}-${k}`} className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={url}
+                            alt={`Foto ${k + 1} del paso ${n}`}
+                            className="h-20 w-20 rounded-md border object-cover"
+                          />
+                          <button
+                            type="button"
+                            aria-label={`Quitar foto ${k + 1} del paso ${n}`}
+                            className="absolute -right-2 -top-2 rounded-full border bg-background p-1 text-destructive shadow-sm"
+                            onClick={() =>
+                              updateStep(i, {
+                                photoUrls: photos.filter((_, j) => j !== k),
+                              })
+                            }
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -793,10 +815,11 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
             ref={stepPhotoInputRef}
             type="file"
             accept="image/*"
+            multiple
             className="hidden"
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) uploadStepPhoto(file);
+              const files = Array.from(e.target.files ?? []);
+              if (files.length > 0) uploadStepPhotos(files);
               e.target.value = "";
             }}
           />

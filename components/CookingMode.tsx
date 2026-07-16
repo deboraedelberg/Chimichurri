@@ -7,9 +7,10 @@ import { ChevronLeft, ChevronRight, ListChecks, Pause, Play, RotateCcw, X } from
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { StepPhotos } from "@/components/StepPhotos";
 import { formatAmount, formatSeconds, cn } from "@/lib/utils";
 import { UNITS } from "@/lib/conversions";
-import type { RecipeDTO } from "@/lib/types";
+import { stepPhotos, type RecipeDTO } from "@/lib/types";
 
 /**
  * Full-screen, dark, step-by-step cooking mode:
@@ -195,12 +196,11 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
                 {step?.content}
               </p>
 
-              {step?.photo_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={step.photo_url}
+              {step && (
+                <StepPhotos
+                  photos={stepPhotos(step)}
                   alt="Foto del paso"
-                  className="max-h-64 w-full rounded-lg border border-border/50 object-cover"
+                  heightClass="h-48 sm:h-64"
                 />
               )}
 

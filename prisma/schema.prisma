@@ -70,11 +70,12 @@ model Step {
   recipe_id String
   recipe    Recipe @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
 
-  order     Int
-  content   String
-  time      Int? // seconds
-  heading   Boolean @default(false) // título de sección ("Masa", "Relleno")
-  photo_url String? // foto opcional del paso
+  order      Int
+  content    String
+  time       Int? // seconds
+  heading    Boolean  @default(false) // título de sección ("Masa", "Relleno")
+  photo_url  String? // legado: una sola foto (los pasos nuevos usan photo_urls)
+  photo_urls String[] @default([]) // hasta 3 fotos del paso
 
   @@index([recipe_id])
 }

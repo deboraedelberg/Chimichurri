@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowLeftRight } from "@/components/icons";
 
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UNITS, compatibleUnits, convert } from "@/lib/conversions";
-import { formatAmount } from "@/lib/utils";
+import { formatAmount, cn } from "@/lib/utils";
 import type { IngredientDTO } from "@/lib/types";
 
 interface IngredientListProps {
@@ -20,21 +21,25 @@ interface IngredientListProps {
 }
 
 /**
- * Scaled ingredient list with per-ingredient unit conversion.
- * Convertible units (mass/volume) get a dropdown of compatible units;
- * count units (unit, clove, pinch…) just scale.
+ * Lista de ingredientes escalada, estilo "cantidad primero":
+ * "**400 g** harina común", con separadores punteados. Las unidades
+ * convertibles (masa/volumen) tienen un ícono ⇄ a la derecha que abre
+ * un menú para verlas en otra unidad; las de conteo solo escalan.
  */
 export function IngredientList({ ingredients, multiplier }: IngredientListProps) {
   // ingredient id -> display unit override
   const [unitOverrides, setUnitOverrides] = useState<Record<string, string>>({});
 
+  const rowClass =
+    "flex min-h-9 items-center gap-2 border-b border-dashed pb-3 last:border-b-0 last:pb-0";
+
   return (
     <ul className="space-y-3">
       {ingredients.map((ing) => {
-        // Título de sección ("Masa", "Relleno")
+        // Título de sección ("Para la masa", "Para el relleno")
         if (ing.heading) {
           return (
-            <li key={ing.id} className="pt-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground first:pt-0">
+            <li key={ing.id} className="pt-3 font-semibold first:pt-0">
               {ing.item}
             </li>
           );
@@ -43,9 +48,10 @@ export function IngredientList({ ingredients, multiplier }: IngredientListProps)
         // C/N ("cantidad necesaria"): sin número, no escala ni convierte
         if (ing.unit === "cn") {
           return (
-            <li key={ing.id} className="flex items-center justify-between gap-3">
-              <span className="min-w-0 flex-1">{ing.item}</span>
-              <span className="shrink-0 text-muted-foreground">c/n</span>
+            <li key={ing.id} className={rowClass}>
+              <span className="min-w-0 flex-1">
+                <span className="font-semibold">c/n</span> {ing.item}
+              </span>
             </li>
           );
         }
@@ -55,39 +61,44 @@ export function IngredientList({ ingredients, multiplier }: IngredientListProps)
         const amount = converted ?? ing.amount * multiplier;
         const options = compatibleUnits(ing.unit);
         const convertible = options.length > 1;
+        const unitLabel = UNITS[displayUnit]?.label ?? displayUnit;
 
         return (
-          <li key={ing.id} className="flex items-center justify-between gap-3">
-            <span className="min-w-0 flex-1">{ing.item}</span>
-            <span className="flex shrink-0 items-center gap-2 tabular-nums">
-              <span className="font-medium">{formatAmount(amount)}</span>
-              {convertible ? (
-                <Select
-                  value={displayUnit}
-                  onValueChange={(unit) =>
-                    setUnitOverrides((prev) => ({ ...prev, [ing.id]: unit }))
-                  }
-                >
-                  <SelectTrigger
-                    className="h-9 w-24 text-xs"
-                    aria-label={`Unidad para ${ing.item}`}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {options.map((u) => (
-                      <SelectItem key={u} value={u}>
-                        {UNITS[u]?.label ?? u}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <span className="text-muted-foreground">
-                  {UNITS[displayUnit]?.label ?? displayUnit}
-                </span>
-              )}
+          <li key={ing.id} className={rowClass}>
+            <span className="min-w-0 flex-1">
+              <span className="font-semibold tabular-nums">
+                {formatAmount(amount)} {unitLabel}
+              </span>{" "}
+              {ing.item}
             </span>
+            {convertible && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground"
+                    aria-label={`Cambiar unidad de ${ing.item}`}
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {options.map((u) => (
+                    <DropdownMenuItem
+                      key={u}
+                      className={cn(u === displayUnit && "font-semibold")}
+                      onClick={() =>
+                        setUnitOverrides((prev) => ({ ...prev, [ing.id]: u }))
+                      }
+                    >
+                      {UNITS[u]?.label ?? u}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </li>
         );
       })}

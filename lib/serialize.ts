@@ -42,6 +42,7 @@ export function toRecipeDTO(
         time: s.time,
         heading: s.heading,
         photo_url: s.photo_url,
+        photo_urls: s.photo_urls,
       })),
     createdAt: recipe.createdAt.toISOString(),
     updatedAt: recipe.updatedAt.toISOString(),

@@ -58,6 +58,7 @@ export async function POST(req: Request) {
           time: s.time ?? null,
           heading: s.heading,
           photo_url: s.photo_url ?? null,
+          photo_urls: s.photo_urls,
         })),
       },
     },
