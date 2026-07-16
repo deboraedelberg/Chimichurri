@@ -1,5 +1,14 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Color del tema con soporte de transparencia (ej: bg-primary/90).
+ * Las variables CSS guardan un color oklch completo, y Tailwind v3 no puede
+ * aplicarle alpha directamente — sin esto, hover:bg-primary/90 y compañía
+ * se descartan en silencio al compilar. color-mix logra el mismo efecto.
+ */
+const themeColor = (variable: string) =>
+  `color-mix(in oklab, var(${variable}) calc(<alpha-value> * 100%), transparent)`;
+
 const config: Config = {
   darkMode: ["class"],
   content: [
@@ -17,55 +26,55 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: "var(--border)",
-        input: "var(--input)",
-        ring: "var(--ring)",
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        border: themeColor("--border"),
+        input: themeColor("--input"),
+        ring: themeColor("--ring"),
+        background: themeColor("--background"),
+        foreground: themeColor("--foreground"),
         primary: {
-          DEFAULT: "var(--primary)",
-          foreground: "var(--primary-foreground)",
+          DEFAULT: themeColor("--primary"),
+          foreground: themeColor("--primary-foreground"),
         },
         secondary: {
-          DEFAULT: "var(--secondary)",
-          foreground: "var(--secondary-foreground)",
+          DEFAULT: themeColor("--secondary"),
+          foreground: themeColor("--secondary-foreground"),
         },
         destructive: {
-          DEFAULT: "var(--destructive)",
-          foreground: "var(--destructive-foreground)",
+          DEFAULT: themeColor("--destructive"),
+          foreground: themeColor("--destructive-foreground"),
         },
         muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
+          DEFAULT: themeColor("--muted"),
+          foreground: themeColor("--muted-foreground"),
         },
         accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "var(--accent-foreground)",
+          DEFAULT: themeColor("--accent"),
+          foreground: themeColor("--accent-foreground"),
         },
         popover: {
-          DEFAULT: "var(--popover)",
-          foreground: "var(--popover-foreground)",
+          DEFAULT: themeColor("--popover"),
+          foreground: themeColor("--popover-foreground"),
         },
         card: {
-          DEFAULT: "var(--card)",
-          foreground: "var(--card-foreground)",
+          DEFAULT: themeColor("--card"),
+          foreground: themeColor("--card-foreground"),
         },
         chart: {
-          "1": "var(--chart-1)",
-          "2": "var(--chart-2)",
-          "3": "var(--chart-3)",
-          "4": "var(--chart-4)",
-          "5": "var(--chart-5)",
+          "1": themeColor("--chart-1"),
+          "2": themeColor("--chart-2"),
+          "3": themeColor("--chart-3"),
+          "4": themeColor("--chart-4"),
+          "5": themeColor("--chart-5"),
         },
         sidebar: {
-          DEFAULT: "var(--sidebar)",
-          foreground: "var(--sidebar-foreground)",
-          primary: "var(--sidebar-primary)",
-          "primary-foreground": "var(--sidebar-primary-foreground)",
-          accent: "var(--sidebar-accent)",
-          "accent-foreground": "var(--sidebar-accent-foreground)",
-          border: "var(--sidebar-border)",
-          ring: "var(--sidebar-ring)",
+          DEFAULT: themeColor("--sidebar"),
+          foreground: themeColor("--sidebar-foreground"),
+          primary: themeColor("--sidebar-primary"),
+          "primary-foreground": themeColor("--sidebar-primary-foreground"),
+          accent: themeColor("--sidebar-accent"),
+          "accent-foreground": themeColor("--sidebar-accent-foreground"),
+          border: themeColor("--sidebar-border"),
+          ring: themeColor("--sidebar-ring"),
         },
       },
       borderRadius: {
