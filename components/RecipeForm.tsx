@@ -572,80 +572,88 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                   ingredientRowRefs.current[i] = el;
                 }}
                 className={cn(
-                  "flex items-center gap-2",
+                  "flex flex-wrap items-center gap-2",
                   draggingIngredient === i && "opacity-60"
                 )}
               >
-                <button
-                  type="button"
-                  aria-label="Reordenar ingrediente"
-                  className="shrink-0 cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
-                  onPointerDown={(e) => startIngredientDrag(e, i)}
-                  onPointerMove={moveIngredientDrag}
-                  onPointerUp={endIngredientDrag}
-                  onPointerCancel={endIngredientDrag}
-                >
-                  <GripVertical className="h-4 w-4" />
-                </button>
-                <Input
-                  ref={(el) => {
-                    ingredientRefs.current[i] = el;
-                  }}
-                  placeholder="Harina"
-                  aria-label="Ingrediente"
-                  className="min-w-0 flex-1"
-                  value={row.item}
-                  onChange={(e) => updateIngredient(i, { item: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      insertIngredient(i);
-                    }
-                  }}
-                />
-                <Input
-                  type="number"
-                  step="any"
-                  min={0}
-                  placeholder={row.unit === "cn" ? "—" : "Cant."}
-                  aria-label="Cantidad"
-                  className="w-20 sm:w-24"
-                  disabled={row.unit === "cn"}
-                  value={row.unit === "cn" ? "" : row.amount}
-                  onChange={(e) => updateIngredient(i, { amount: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      insertIngredient(i);
-                    }
-                  }}
-                />
-                <Select
-                  value={row.unit}
-                  onValueChange={(unit) => updateIngredient(i, { unit })}
-                >
-                  <SelectTrigger aria-label="Unidad" className="w-24 sm:w-28">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNIT_OPTIONS.map((u) => (
-                      <SelectItem key={u.key} value={u.key}>
-                        {u.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0 text-destructive"
-                  disabled={ingredients.length === 1}
-                  onClick={() => setIngredients((rows) => rows.filter((_, j) => j !== i))}
-                  aria-label="Quitar ingrediente"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {/* En mobile el nombre ocupa todo el ancho; los controles van abajo */}
+                <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
+                  <button
+                    type="button"
+                    aria-label="Reordenar ingrediente"
+                    className="shrink-0 cursor-grab touch-none text-muted-foreground/60 hover:text-foreground active:cursor-grabbing"
+                    onPointerDown={(e) => startIngredientDrag(e, i)}
+                    onPointerMove={moveIngredientDrag}
+                    onPointerUp={endIngredientDrag}
+                    onPointerCancel={endIngredientDrag}
+                  >
+                    <GripVertical className="h-4 w-4" />
+                  </button>
+                  <Input
+                    ref={(el) => {
+                      ingredientRefs.current[i] = el;
+                    }}
+                    placeholder="Harina"
+                    aria-label="Ingrediente"
+                    className="min-w-0 flex-1"
+                    value={row.item}
+                    onChange={(e) => updateIngredient(i, { item: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        insertIngredient(i);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex w-full items-center gap-2 pl-6 sm:w-auto sm:pl-0">
+                  <Input
+                    type="number"
+                    step="any"
+                    min={0}
+                    placeholder={row.unit === "cn" ? "—" : "Cant."}
+                    aria-label="Cantidad"
+                    className="w-20 sm:w-24"
+                    disabled={row.unit === "cn"}
+                    value={row.unit === "cn" ? "" : row.amount}
+                    onChange={(e) => updateIngredient(i, { amount: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        insertIngredient(i);
+                      }
+                    }}
+                  />
+                  <Select
+                    value={row.unit}
+                    onValueChange={(unit) => updateIngredient(i, { unit })}
+                  >
+                    <SelectTrigger
+                      aria-label="Unidad"
+                      className="min-w-0 flex-1 sm:w-28 sm:flex-none"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIT_OPTIONS.map((u) => (
+                        <SelectItem key={u.key} value={u.key}>
+                          {u.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-destructive"
+                    disabled={ingredients.length === 1}
+                    onClick={() => setIngredients((rows) => rows.filter((_, j) => j !== i))}
+                    aria-label="Quitar ingrediente"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )
           )}
@@ -720,66 +728,71 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
               const photos = row.photoUrls ?? [];
               return (
                 <div key={i} className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="mt-3 w-6 shrink-0 text-center text-sm font-semibold text-muted-foreground">
-                      {n}
-                    </span>
-                    <Textarea
-                      ref={(el) => {
-                        stepRefs.current[i] = el;
-                      }}
-                      placeholder="Amasa hasta que quede suave…"
-                      value={row.content}
-                      onChange={(e) => updateStep(i, { content: e.target.value })}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          insertStep(i);
-                        }
-                      }}
-                      rows={2}
-                      className="min-w-0 flex-1"
-                    />
-                    <div className="w-20 shrink-0 space-y-1">
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="min"
-                        aria-label={`Temporizador del paso ${n} (minutos)`}
-                        value={row.minutes}
-                        onChange={(e) => updateStep(i, { minutes: e.target.value })}
+                  <div className="flex flex-wrap items-start gap-2">
+                    {/* En mobile la descripción ocupa todo el ancho; los controles van abajo */}
+                    <div className="flex w-full min-w-0 items-start gap-2 sm:w-auto sm:flex-1">
+                      <span className="mt-3 w-6 shrink-0 text-center text-sm font-semibold text-muted-foreground">
+                        {n}
+                      </span>
+                      <Textarea
+                        ref={(el) => {
+                          stepRefs.current[i] = el;
+                        }}
+                        placeholder="Amasa hasta que quede suave…"
+                        value={row.content}
+                        onChange={(e) => updateStep(i, { content: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            insertStep(i);
+                          }
+                        }}
+                        rows={2}
+                        className="min-w-0 flex-1"
                       />
-                      <p className="text-center text-[10px] text-muted-foreground">tiempo</p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "shrink-0",
-                        photos.length > 0 ? "text-primary" : "text-muted-foreground"
-                      )}
-                      disabled={uploadingStep === i || photos.length >= MAX_STEP_PHOTOS}
-                      onClick={() => pickStepPhoto(i)}
-                      aria-label={`Agregar foto al paso ${n} (${photos.length} de ${MAX_STEP_PHOTOS})`}
-                    >
-                      {uploadingStep === i ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ImagePlus className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 text-destructive"
-                      disabled={steps.length === 1}
-                      onClick={() => setSteps((rows) => rows.filter((_, j) => j !== i))}
-                      aria-label={`Quitar paso ${n}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-start gap-2 pl-8 sm:pl-0">
+                      <div className="w-20 shrink-0 space-y-1">
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="min"
+                          aria-label={`Temporizador del paso ${n} (minutos)`}
+                          value={row.minutes}
+                          onChange={(e) => updateStep(i, { minutes: e.target.value })}
+                        />
+                        <p className="text-center text-[10px] text-muted-foreground">tiempo</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "shrink-0",
+                          photos.length > 0 ? "text-primary" : "text-muted-foreground"
+                        )}
+                        disabled={uploadingStep === i || photos.length >= MAX_STEP_PHOTOS}
+                        onClick={() => pickStepPhoto(i)}
+                        aria-label={`Agregar foto al paso ${n} (${photos.length} de ${MAX_STEP_PHOTOS})`}
+                      >
+                        {uploadingStep === i ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ImagePlus className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 text-destructive"
+                        disabled={steps.length === 1}
+                        onClick={() => setSteps((rows) => rows.filter((_, j) => j !== i))}
+                        aria-label={`Quitar paso ${n}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   {photos.length > 0 && (
                     <div className="ml-8 flex flex-wrap gap-3">
