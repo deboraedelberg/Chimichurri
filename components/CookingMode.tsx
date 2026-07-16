@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, ListChecks, Pause, Play, RotateCcw, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,10 @@ import { stepPhotos, type RecipeDTO } from "@/lib/types";
  * - keeps the screen awake where the Wake Lock API is available
  */
 export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
+  const router = useRouter();
   // -1 = ingredients checklist, 0..n-1 = steps
   const [index, setIndex] = useState(-1);
+  const [finishing, setFinishing] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [done, setDone] = useState<Record<number, boolean>>({});
 
@@ -98,6 +101,24 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
   function goTo(next: number) {
     if (index >= 0) setDone((d) => ({ ...d, [index]: true }));
     setIndex(next);
+  }
+
+  // ¡Terminamos! Confetti y de vuelta a la receta
+  async function finish() {
+    if (finishing) return;
+    setFinishing(true);
+    try {
+      const confetti = (await import("canvas-confetti")).default;
+      // Dos ráfagas desde abajo, por encima del modo cocina (z-50)
+      confetti({ particleCount: 90, spread: 70, origin: { x: 0.5, y: 0.9 }, zIndex: 100 });
+      setTimeout(() => {
+        confetti({ particleCount: 45, spread: 100, origin: { x: 0.2, y: 0.95 }, zIndex: 100 });
+        confetti({ particleCount: 45, spread: 100, origin: { x: 0.8, y: 0.95 }, zIndex: 100 });
+      }, 200);
+    } catch {
+      // sin confetti no se frena la fiesta
+    }
+    setTimeout(() => router.push(`/recipes/${recipe.id}`), 900);
   }
 
   const progress =
@@ -269,8 +290,8 @@ export function CookingMode({ recipe }: { recipe: RecipeDTO }) {
               <ChevronRight />
             </Button>
           ) : isLastStep ? (
-            <Button size="lg" className="flex-1" asChild>
-              <Link href={`/recipes/${recipe.id}`}>Terminar 🎉</Link>
+            <Button size="lg" className="flex-1" onClick={finish} disabled={finishing}>
+              Terminar 🎉
             </Button>
           ) : (
             <Button size="lg" className="flex-1" onClick={() => goTo(index + 1)}>
