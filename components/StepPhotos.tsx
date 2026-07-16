@@ -14,13 +14,10 @@ interface StepPhotosProps {
   className?: string;
 }
 
-/** Separación entre slides del carrousel (gap-2 = 8px), para calcular el índice al scrollear */
-const SLIDE_GAP = 8;
-
 /**
- * Fotos de un paso: una sola foto o un carrousel deslizable (scroll-snap)
- * con puntitos. Siempre con alto acotado, y al tocar cualquier foto se abre
- * un lightbox a pantalla completa para verla en grande (deslizable también).
+ * Fotos de un paso, una al lado de la otra ocupando todo el ancho, con alto
+ * acotado. Al tocar cualquiera se abre un lightbox a pantalla completa para
+ * verla en grande (deslizable entre fotos).
  */
 export function StepPhotos({
   photos,
@@ -28,7 +25,6 @@ export function StepPhotos({
   heightClass = "h-44 sm:h-56",
   className,
 }: StepPhotosProps) {
-  const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const lightboxRef = useRef<HTMLDivElement>(null);
@@ -53,10 +49,10 @@ export function StepPhotos({
     setOpen(true);
   }
 
-  function slideIndex(el: HTMLElement, gap: number) {
+  function slideIndex(el: HTMLElement) {
     return Math.min(
       photos.length - 1,
-      Math.max(0, Math.round(el.scrollLeft / (el.clientWidth + gap)))
+      Math.max(0, Math.round(el.scrollLeft / el.clientWidth))
     );
   }
 
@@ -66,19 +62,13 @@ export function StepPhotos({
   }
 
   return (
-    <div className={cn("space-y-1.5", className)}>
-      <div
-        className={cn(
-          "flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain rounded-lg",
-          heightClass
-        )}
-        onScroll={(e) => setActive(slideIndex(e.currentTarget, SLIDE_GAP))}
-      >
+    <div className={className}>
+      <div className={cn("flex w-full gap-2", heightClass)}>
         {photos.map((url, i) => (
           <button
             key={`${url}-${i}`}
             type="button"
-            className="h-full w-full shrink-0 snap-center overflow-hidden rounded-lg border"
+            className="h-full min-w-0 flex-1 overflow-hidden rounded-lg border"
             onClick={() => openAt(i)}
             aria-label={`Ver en grande: ${alt}${multiple ? ` (foto ${i + 1} de ${photos.length})` : ""}`}
           >
@@ -93,27 +83,13 @@ export function StepPhotos({
         ))}
       </div>
 
-      {multiple && (
-        <div className="flex justify-center gap-1.5" aria-hidden>
-          {photos.map((_, i) => (
-            <span
-              key={i}
-              className={cn(
-                "h-1.5 w-1.5 rounded-full transition-colors",
-                i === active ? "bg-primary" : "bg-muted-foreground/30"
-              )}
-            />
-          ))}
-        </div>
-      )}
-
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="dark flex h-[100dvh] w-screen max-w-none items-center justify-center border-0 bg-black/95 p-0 shadow-none sm:rounded-none">
           <DialogTitle className="sr-only">{alt}</DialogTitle>
           <div
             ref={lightboxRef}
             className="flex h-full w-full snap-x snap-mandatory overflow-x-auto"
-            onScroll={(e) => setLightboxIndex(slideIndex(e.currentTarget, 0))}
+            onScroll={(e) => setLightboxIndex(slideIndex(e.currentTarget))}
           >
             {photos.map((url, i) => (
               <div
