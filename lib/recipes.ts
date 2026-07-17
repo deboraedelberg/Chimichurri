@@ -57,9 +57,11 @@ export function parseCategoria(
  */
 export function buildRecipeWhere(
   qRaw?: string | null,
-  categoria?: string | null
+  categoria?: string | null,
+  etiquetaRaw?: string | null
 ): Prisma.RecipeWhereInput | undefined {
   const q = qRaw?.trim();
+  const etiqueta = etiquetaRaw?.trim().toLowerCase();
   const where: Prisma.RecipeWhereInput = {
     ...(q
       ? {
@@ -71,8 +73,18 @@ export function buildRecipeWhere(
         }
       : {}),
     ...(categoria ? { category: categoria } : {}),
+    ...(etiqueta ? { tags: { has: etiqueta } } : {}),
   };
   return Object.keys(where).length ? where : undefined;
+}
+
+/** Normaliza el valor de ?etiqueta= de la URL */
+export function parseEtiqueta(
+  raw: string | string[] | null | undefined
+): string | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const etiqueta = value?.trim().toLowerCase();
+  return etiqueta ? etiqueta.slice(0, 50) : null;
 }
 
 export type Permission = "owner" | "edit" | "view" | null;

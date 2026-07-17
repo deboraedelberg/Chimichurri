@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, Search, UtensilsCrossed } from "@/components/icons";
+import { Plus, Search, UtensilsCrossed, X } from "@/components/icons";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { RECIPE_INCLUDE, buildRecipeWhere, parseCategoria } from "@/lib/recipes";
+import {
+  RECIPE_INCLUDE,
+  buildRecipeWhere,
+  parseCategoria,
+  parseEtiqueta,
+} from "@/lib/recipes";
 import { toRecipeDTO } from "@/lib/serialize";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecipeCard } from "@/components/RecipeCard";
@@ -14,7 +20,11 @@ import { CategoryChips } from "@/components/CategoryChips";
 export const dynamic = "force-dynamic";
 
 interface HomePageProps {
-  searchParams: { q?: string | string[]; categoria?: string | string[] };
+  searchParams: {
+    q?: string | string[];
+    categoria?: string | string[];
+    etiqueta?: string | string[];
+  };
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -23,11 +33,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const q = (Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q)?.trim();
   const categoria = parseCategoria(searchParams.categoria);
-  const hasFilters = Boolean(q || categoria);
+  const etiqueta = parseEtiqueta(searchParams.etiqueta);
+  const hasFilters = Boolean(q || categoria || etiqueta);
 
   // Sitio familiar: todas las recetas son de todos
   const recipes = await prisma.recipe.findMany({
-    where: buildRecipeWhere(q, categoria),
+    where: buildRecipeWhere(q, categoria, etiqueta),
     include: RECIPE_INCLUDE,
     orderBy: { updatedAt: "desc" },
   });
@@ -52,6 +63,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </div>
 
       <CategoryChips q={q} categoria={categoria} />
+
+      {etiqueta && (
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <span>Recetas con la etiqueta</span>
+          <Badge variant="secondary" className="gap-1 pr-1.5 text-sm font-normal">
+            {etiqueta}
+            <Link href="/" aria-label="Quitar filtro de etiqueta" className="rounded-full p-0.5 hover:bg-background/60">
+              <X className="h-3.5 w-3.5" />
+            </Link>
+          </Badge>
+        </div>
+      )}
 
       {recipes.length === 0 && hasFilters ? (
         <Card>

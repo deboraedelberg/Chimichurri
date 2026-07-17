@@ -125,9 +125,14 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
         {recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {recipe.tags.map((tag) => (
-              <Badge key={tag} variant="outline">
-                {tag}
-              </Badge>
+              <Link key={tag} href={`/?etiqueta=${encodeURIComponent(tag)}`}>
+                <Badge
+                  variant="outline"
+                  className="cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  {tag}
+                </Badge>
+              </Link>
             ))}
           </div>
         )}

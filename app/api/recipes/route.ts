@@ -6,6 +6,7 @@ import {
   RECIPE_INCLUDE,
   buildRecipeWhere,
   parseCategoria,
+  parseEtiqueta,
 } from "@/lib/recipes";
 
 export async function GET(req: Request) {
@@ -20,7 +21,8 @@ export async function GET(req: Request) {
   const recipes = await prisma.recipe.findMany({
     where: buildRecipeWhere(
       searchParams.get("q"),
-      parseCategoria(searchParams.get("categoria"))
+      parseCategoria(searchParams.get("categoria")),
+      parseEtiqueta(searchParams.get("etiqueta"))
     ),
     include: RECIPE_INCLUDE,
     orderBy: { updatedAt: "desc" },
