@@ -382,7 +382,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
               <SelectContent>
                 {CATEGORY_GROUPS.map((group) => (
                   <SelectGroup key={group.label}>
-                    <SelectLabel>{group.label}</SelectLabel>
+                    <SelectLabel className="bg-muted">{group.label}</SelectLabel>
                     {group.items.map((item) => (
                       <SelectItem key={item.value} value={item.value}>
                         {item.label}
