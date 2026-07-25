@@ -15,7 +15,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
   return (
     <Link href={`/recipes/${recipe.id}`} className="group block">
       <Card className="h-full overflow-hidden transition-colors hover:border-primary/50">
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+        <div className="relative aspect-video w-full overflow-hidden bg-muted">
           {recipe.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

@@ -91,7 +91,7 @@ export function PhotoUploader({ photoUrl, onPhotoChange, aiPrompt }: PhotoUpload
       <ImageCropModal imageSrc={cropSrc} onCancel={closeCrop} onSave={handleUpload} />
 
       {photoUrl ? (
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border">
+        <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={photoUrl} alt="Foto de la receta" className="h-full w-full object-cover" />
           <Button

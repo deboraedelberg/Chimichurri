@@ -17,7 +17,7 @@ interface ImageCropModalProps {
   imageSrc: string | null;
   onCancel: () => void;
   onSave: (file: File) => void;
-  /** Ancho/alto del recorte final. Por defecto 4:3, igual que las tarjetas de receta. */
+  /** Ancho/alto del recorte final. Por defecto 16:9, igual que tarjetas y detalle. */
   aspect?: number;
 }
 
@@ -34,12 +34,12 @@ function clampNum(value: number, min: number, max: number) {
 /**
  * Modal para recortar la foto principal antes de subirla. Se ve la imagen
  * completa con margen alrededor y un marco punteado marca exactamente lo
- * que va a quedar (en 4:3, igual que las tarjetas de receta); se puede
+ * que va a quedar (en 16:9, igual que tarjetas y detalle); se puede
  * arrastrar para reencuadrar y usar el slider para acercar/alejar dentro
  * de ese marco. Al guardar se dibuja el recorte en un canvas y se entrega
  * como File listo para pasarle a uploadImage.
  */
-export function ImageCropModal({ imageSrc, onCancel, onSave, aspect = 4 / 3 }: ImageCropModalProps) {
+export function ImageCropModal({ imageSrc, onCancel, onSave, aspect = 16 / 9 }: ImageCropModalProps) {
   const open = imageSrc != null;
   const imgRef = useRef<HTMLImageElement>(null);
   const dragState = useRef<{ startX: number; startY: number; startOffset: { x: number; y: number } } | null>(
