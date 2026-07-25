@@ -24,15 +24,19 @@ interface ImageCropModalProps {
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 const OUTPUT_WIDTH = 1200;
+/** Margen visible alrededor del marco de recorte, para ver qué queda afuera. */
+const FRAME_PADDING = 28;
 
 function clampNum(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
 /**
- * Modal para recortar la foto principal antes de subirla: se puede arrastrar
- * para reencuadrar y usar el slider para acercar/alejar, dentro de un marco
- * fijo en 4:3. Al guardar se dibuja el recorte en un canvas y se entrega
+ * Modal para recortar la foto principal antes de subirla. Se ve la imagen
+ * completa con margen alrededor y un marco punteado marca exactamente lo
+ * que va a quedar (en 4:3, igual que las tarjetas de receta); se puede
+ * arrastrar para reencuadrar y usar el slider para acercar/alejar dentro
+ * de ese marco. Al guardar se dibuja el recorte en un canvas y se entrega
  * como File listo para pasarle a uploadImage.
  */
 export function ImageCropModal({ imageSrc, onCancel, onSave, aspect = 4 / 3 }: ImageCropModalProps) {
@@ -46,10 +50,10 @@ export function ImageCropModal({ imageSrc, onCancel, onSave, aspect = 4 / 3 }: I
   // render después de que `open` pasa a true, así que un useEffect atado a
   // `open` corre antes de que el nodo exista. El callback avisa en cuanto
   // el div realmente entra al DOM.
-  const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
-  const containerRef = useCallback((el: HTMLDivElement | null) => setContainerEl(el), []);
+  const [stageEl, setStageEl] = useState<HTMLDivElement | null>(null);
+  const stageRef = useCallback((el: HTMLDivElement | null) => setStageEl(el), []);
 
-  const [dims, setDims] = useState({ width: 0, height: 0 });
+  const [stageWidth, setStageWidth] = useState(0);
   const [natural, setNatural] = useState({ width: 0, height: 0 });
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -62,25 +66,31 @@ export function ImageCropModal({ imageSrc, onCancel, onSave, aspect = 4 / 3 }: I
   }, [imageSrc]);
 
   useEffect(() => {
-    if (!containerEl) return;
-    const update = () => setDims({ width: containerEl.clientWidth, height: containerEl.clientHeight });
+    if (!stageEl) return;
+    const update = () => setStageWidth(stageEl.clientWidth);
     update();
     const ro = new ResizeObserver(update);
-    ro.observe(containerEl);
+    ro.observe(stageEl);
     return () => ro.disconnect();
-  }, [containerEl]);
+  }, [stageEl]);
+
+  // El marco de recorte ocupa el ancho del stage menos el margen a cada
+  // lado; el stage crece en alto para dejar ese mismo margen arriba y abajo.
+  const frameW = Math.max(0, stageWidth - FRAME_PADDING * 2);
+  const frameH = frameW / aspect;
+  const stageHeight = frameW > 0 ? frameH + FRAME_PADDING * 2 : 0;
 
   function baseScale() {
-    if (!dims.width || !dims.height || !natural.width) return 1;
-    return Math.max(dims.width / natural.width, dims.height / natural.height);
+    if (!frameW || !frameH || !natural.width) return 1;
+    return Math.max(frameW / natural.width, frameH / natural.height);
   }
 
   function clampOffset(next: { x: number; y: number }, zoomVal: number) {
     const scale = baseScale() * zoomVal;
     const imgW = natural.width * scale;
     const imgH = natural.height * scale;
-    const maxX = Math.max(0, (imgW - dims.width) / 2);
-    const maxY = Math.max(0, (imgH - dims.height) / 2);
+    const maxX = Math.max(0, (imgW - frameW) / 2);
+    const maxY = Math.max(0, (imgH - frameH) / 2);
     return { x: clampNum(next.x, -maxX, maxX), y: clampNum(next.y, -maxY, maxY) };
   }
 
@@ -111,17 +121,18 @@ export function ImageCropModal({ imageSrc, onCancel, onSave, aspect = 4 / 3 }: I
   }
 
   async function handleSave() {
-    if (!imgRef.current || !natural.width || !dims.width) return;
+    if (!imgRef.current || !natural.width || !frameW) return;
     setSaving(true);
     try {
       const scale = baseScale() * zoom;
-      const imgLeft = (dims.width - natural.width * scale) / 2 + offset.x;
-      const imgTop = (dims.height - natural.height * scale) / 2 + offset.y;
-
-      const sx = -imgLeft / scale;
-      const sy = -imgTop / scale;
-      const sw = dims.width / scale;
-      const sh = dims.height / scale;
+      // Posición de la imagen relativa al stage (centrada + el arrastre)
+      const imgLeft = (stageWidth - natural.width * scale) / 2 + offset.x;
+      const imgTop = (stageHeight - natural.height * scale) / 2 + offset.y;
+      // El marco está inset FRAME_PADDING dentro del stage
+      const sx = (FRAME_PADDING - imgLeft) / scale;
+      const sy = (FRAME_PADDING - imgTop) / scale;
+      const sw = frameW / scale;
+      const sh = frameH / scale;
 
       const canvas = document.createElement("canvas");
       canvas.width = OUTPUT_WIDTH;
@@ -148,8 +159,9 @@ export function ImageCropModal({ imageSrc, onCancel, onSave, aspect = 4 / 3 }: I
         </DialogHeader>
 
         <div
-          ref={containerRef}
-          className="relative mx-auto aspect-[4/3] w-full touch-none select-none overflow-hidden rounded-lg border bg-muted"
+          ref={stageRef}
+          className="relative w-full touch-none select-none overflow-hidden rounded-lg bg-muted"
+          style={{ height: stageHeight || undefined }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -171,6 +183,13 @@ export function ImageCropModal({ imageSrc, onCancel, onSave, aspect = 4 / 3 }: I
               }}
             />
           )}
+          {/* Marco punteado: marca exactamente lo que va a quedar. El
+              box-shadow con spread enorme oscurece todo lo que queda
+              afuera del marco, recortado por el overflow-hidden del stage. */}
+          <div
+            className="pointer-events-none absolute rounded-sm border-2 border-dashed border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"
+            style={{ left: FRAME_PADDING, top: FRAME_PADDING, width: frameW, height: frameH }}
+          />
         </div>
 
         <div className="flex items-center gap-3">
