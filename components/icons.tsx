@@ -39,6 +39,8 @@ import {
   Tick02Icon,
   UserGroupIcon,
   UserIcon,
+  ZoomInAreaIcon,
+  ZoomOutAreaIcon,
 } from "@hugeicons/core-free-icons";
 
 /**
@@ -99,3 +101,5 @@ export const Sun = make(Sun01Icon);
 export const Moon = make(Moon02Icon);
 export const AlertTriangle = make(Alert02Icon);
 export const Sparkles = make(SparklesIcon);
+export const ZoomIn = make(ZoomInAreaIcon);
+export const ZoomOut = make(ZoomOutAreaIcon);

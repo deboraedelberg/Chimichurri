@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { ImagePlus, Loader2, Sparkles, X } from "@/components/icons";
 
 import { Button } from "@/components/ui/button";
+import { ImageCropModal } from "@/components/ImageCropModal";
 import { uploadImage } from "@/lib/upload-client";
 
 interface PhotoUploaderProps {
@@ -22,8 +23,20 @@ export function PhotoUploader({ photoUrl, onPhotoChange, aiPrompt }: PhotoUpload
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+
+  function handlePick(file: File) {
+    setError(null);
+    setCropSrc(URL.createObjectURL(file));
+  }
+
+  function closeCrop() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  }
 
   async function handleUpload(file: File) {
+    closeCrop();
     setUploading(true);
     setError(null);
     try {
@@ -70,10 +83,12 @@ export function PhotoUploader({ photoUrl, onPhotoChange, aiPrompt }: PhotoUpload
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) handleUpload(file);
+          if (file) handlePick(file);
           e.target.value = "";
         }}
       />
+
+      <ImageCropModal imageSrc={cropSrc} onCancel={closeCrop} onSave={handleUpload} />
 
       {photoUrl ? (
         <div className="relative overflow-hidden rounded-lg border">
