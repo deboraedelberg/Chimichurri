@@ -46,12 +46,12 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
   return (
     <div className="space-y-6">
       {recipe.photo_url && (
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-lg border">
+        <div className="overflow-hidden rounded-lg border">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={recipe.photo_url}
             alt={recipe.name}
-            className="h-full w-full object-cover"
+            className="max-h-80 w-full object-cover"
           />
         </div>
       )}
