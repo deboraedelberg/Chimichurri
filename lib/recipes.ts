@@ -87,6 +87,58 @@ export function parseEtiqueta(
   return etiqueta ? etiqueta.slice(0, 50) : null;
 }
 
+export interface FrequentCategory {
+  category: string;
+  viewCount: number;
+  recipeId: string;
+  recipeName: string;
+  photoUrl: string | null;
+}
+
+/**
+ * Categorías cuyas recetas este usuario más abrió (RecipeView), de más a
+ * menos aperturas. Cada categoría se representa con la receta que más
+ * abrió dentro de ella (para la foto del bloque).
+ */
+export async function getFrequentCategories(
+  userId: string,
+  limit = 6
+): Promise<FrequentCategory[]> {
+  const views = await prisma.recipeView.findMany({
+    where: { user_id: userId },
+    select: {
+      recipe: { select: { id: true, name: true, category: true, photo_url: true } },
+    },
+  });
+
+  const byCategory = new Map<string, Map<string, { count: number; name: string; photoUrl: string | null }>>();
+  for (const { recipe } of views) {
+    if (!recipe.category) continue;
+    if (!byCategory.has(recipe.category)) byCategory.set(recipe.category, new Map());
+    const recipes = byCategory.get(recipe.category)!;
+    const existing = recipes.get(recipe.id);
+    if (existing) existing.count += 1;
+    else recipes.set(recipe.id, { count: 1, name: recipe.name, photoUrl: recipe.photo_url });
+  }
+
+  return [...byCategory.entries()]
+    .map(([category, recipes]) => {
+      const total = [...recipes.values()].reduce((sum, r) => sum + r.count, 0);
+      const [topRecipeId, top] = [...recipes.entries()].sort(
+        (a, b) => b[1].count - a[1].count
+      )[0];
+      return {
+        category,
+        viewCount: total,
+        recipeId: topRecipeId,
+        recipeName: top.name,
+        photoUrl: top.photoUrl,
+      };
+    })
+    .sort((a, b) => b.viewCount - a.viewCount)
+    .slice(0, limit);
+}
+
 export type Permission = "owner" | "edit" | "view" | null;
 
 /**

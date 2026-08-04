@@ -25,6 +25,11 @@ export default async function RecipeDetailPage({
   });
   if (!recipe) notFound();
 
+  // Alimenta "Categorías más frecuentes" en la home; si falla no rompe la página.
+  await prisma.recipeView
+    .create({ data: { recipe_id: recipe.id, user_id: session.user.id } })
+    .catch(() => {});
+
   return (
     <main className="container max-w-3xl py-8">
       <RecipeDetail recipe={toRecipeDTO(recipe, permission)} />

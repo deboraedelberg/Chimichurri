@@ -18,6 +18,7 @@ model User {
   recipes        Recipe[]
   sharesSent     RecipeShare[] @relation("Owner")
   sharesReceived RecipeShare[] @relation("SharedWith")
+  recipeViews    RecipeView[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -45,6 +46,7 @@ model Recipe {
   tags String[] @default([])
 
   shares RecipeShare[] @relation("RecipeOwner")
+  views  RecipeView[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -98,4 +100,20 @@ model RecipeShare {
   @@unique([recipe_id, shared_with_id])
   @@index([recipe_id])
   @@index([shared_with_id])
+}
+
+// Un registro por cada apertura del detalle de una receta (/recipes/[id]).
+// Alimenta el bloque "Categorías más frecuentes" de la home (por usuario).
+model RecipeView {
+  id        String @id @default(cuid())
+  recipe_id String
+  recipe    Recipe @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  viewedAt DateTime @default(now())
+
+  @@index([recipe_id])
+  @@index([user_id])
 }

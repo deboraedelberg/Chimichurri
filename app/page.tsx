@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import {
   RECIPE_INCLUDE,
   buildRecipeWhere,
+  getFrequentCategories,
   parseCategoria,
   parseEtiqueta,
 } from "@/lib/recipes";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecipeCard } from "@/components/RecipeCard";
+import { FrequentCategories } from "@/components/FrequentCategories";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,15 @@ interface HomePageProps {
   };
 }
 
+const NUEVA_RECETA_BUTTON = (
+  <Button asChild size="lg">
+    <Link href="/recipes/new">
+      <Plus />
+      Nueva receta
+    </Link>
+  </Button>
+);
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
@@ -35,14 +46,74 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const etiqueta = parseEtiqueta(searchParams.etiqueta);
   const hasFilters = Boolean(q || categoria || etiqueta);
 
-  // Sitio familiar: todas las recetas son de todos
+  const firstName = session.user.name?.split(" ")[0] ?? "chef";
+
+  // Sin filtros: dashboard con categorías frecuentes + últimas recetas
+  if (!hasFilters) {
+    const [frequentCategories, latestRecipes] = await Promise.all([
+      getFrequentCategories(session.user.id),
+      prisma.recipe.findMany({
+        include: RECIPE_INCLUDE,
+        orderBy: { createdAt: "desc" },
+        take: 4,
+      }),
+    ]);
+
+    return (
+      <main className="container space-y-10 py-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Hola, {firstName} 👋
+            </h1>
+            <p className="text-muted-foreground">¿Qué cocinamos hoy?</p>
+          </div>
+          {NUEVA_RECETA_BUTTON}
+        </div>
+
+        <FrequentCategories categories={frequentCategories} />
+
+        {latestRecipes.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+              <UtensilsCrossed className="h-12 w-12 text-muted-foreground/40" />
+              <div>
+                <p className="font-medium">Todavía no hay recetas</p>
+                <p className="text-sm text-muted-foreground">
+                  Agrega la primera receta de la familia — escríbela, escanea una foto o
+                  impórtala desde una URL.
+                </p>
+              </div>
+              <Button asChild>
+                <Link href="/recipes/new">
+                  <Plus />
+                  Crear la primera receta
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground">
+              Últimas recetas subidas
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {latestRecipes.map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={toRecipeDTO(recipe)} />
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+    );
+  }
+
+  // Con filtros (búsqueda / etiqueta): lista de resultados
   const recipes = await prisma.recipe.findMany({
     where: buildRecipeWhere(q, categoria, etiqueta),
     include: RECIPE_INCLUDE,
     orderBy: { updatedAt: "desc" },
   });
-
-  const firstName = session.user.name?.split(" ")[0] ?? "chef";
 
   return (
     <main className="container space-y-8 py-8">
@@ -53,12 +124,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </h1>
           <p className="text-muted-foreground">¿Qué cocinamos hoy?</p>
         </div>
-        <Button asChild size="lg">
-          <Link href="/recipes/new">
-            <Plus />
-            Nueva receta
-          </Link>
-        </Button>
+        {NUEVA_RECETA_BUTTON}
       </div>
 
       {etiqueta && (
@@ -73,7 +139,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
       )}
 
-      {recipes.length === 0 && hasFilters ? (
+      {recipes.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <Search className="h-12 w-12 text-muted-foreground/40" />
@@ -85,25 +151,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </div>
             <Button asChild variant="outline">
               <Link href="/">Limpiar filtros</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : recipes.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-            <UtensilsCrossed className="h-12 w-12 text-muted-foreground/40" />
-            <div>
-              <p className="font-medium">Todavía no hay recetas</p>
-              <p className="text-sm text-muted-foreground">
-                Agrega la primera receta de la familia — escríbela, escanea una foto o
-                impórtala desde una URL.
-              </p>
-            </div>
-            <Button asChild>
-              <Link href="/recipes/new">
-                <Plus />
-                Crear la primera receta
-              </Link>
             </Button>
           </CardContent>
         </Card>
