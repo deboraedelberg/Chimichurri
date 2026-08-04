@@ -67,9 +67,6 @@ export function SubNav() {
     <nav className="w-full border-b bg-background shadow-sm">
       <div className="container">
         <div className="no-scrollbar flex items-center gap-1 overflow-x-auto py-1">
-          <Link href="/" className={navLinkClass}>
-            Inicio
-          </Link>
           <span
             title="Próximamente"
             aria-disabled
