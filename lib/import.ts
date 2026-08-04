@@ -288,9 +288,9 @@ const CATEGORY_HINTS: [RegExp, string | null][] = [
   [/^alfajores$/i, "dulce-galletitas"],
   [/^panes(\s+y\s+facturas)?$/i, "otros-panes"],
   [/^facturas$/i, "otros-panes"],
-  [/^bebidas$/i, "otros-bebidas"],
+  [/^bebidas$/i, null],
   [/^entradas(\s+y\s+snacks)?$/i, "salado-entradas"],
-  [/^comidas$/i, "salado-comidas"],
+  [/^comidas$/i, null],
 ];
 
 /** "para 48 knishes" / "(para 4 porciones)" -> rinde + tipo */

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CATEGORY_GROUPS, categoryChipLabel } from "@/lib/categories";
+import { CATEGORY_GROUPS } from "@/lib/categories";
 import { Button } from "@/components/ui/button";
 
 interface CategoryChipsProps {
@@ -51,6 +51,15 @@ export function CategoryChips({ q, categoria }: CategoryChipsProps) {
       <Chip href={hrefFor(q, null)} selected={!categoria}>
         Todas
       </Chip>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled
+        title="Próximamente"
+        className="shrink-0 rounded-full opacity-50"
+      >
+        Favoritos
+      </Button>
       {items.map((item) => {
         const selected = categoria === item.value;
         return (
@@ -59,7 +68,7 @@ export function CategoryChips({ q, categoria }: CategoryChipsProps) {
             href={hrefFor(q, selected ? null : item.value)}
             selected={selected}
           >
-            {categoryChipLabel(item)}
+            {item.label}
           </Chip>
         );
       })}

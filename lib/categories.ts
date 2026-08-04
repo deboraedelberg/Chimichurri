@@ -1,45 +1,55 @@
 /**
  * Taxonomía de categorías del recetario familiar.
  * Único lugar con la lista: el form la usa para el dropdown agrupado
- * y los futuros filtros de la home la reusan.
+ * y los filtros de la home (chips + menú de navegación) la reusan.
  */
 
 export interface CategoryItem {
   value: string; // slug guardado en Recipe.category
   label: string;
-  chip?: string; // etiqueta corta para los chips de la home (si difiere de label)
 }
 
 export interface CategoryGroup {
-  label: string;
+  key: "salado" | "dulce" | "otros";
+  label: string; // usado en badges: "Recetas saladas · Carnes"
+  navLabel: string; // usado en el menú de navegación: "Recetas Saladas"
   items: CategoryItem[];
 }
 
 export const CATEGORY_GROUPS: CategoryGroup[] = [
   {
-    label: "Salado",
+    key: "salado",
+    label: "Recetas saladas",
+    navLabel: "Recetas Saladas",
     items: [
-      { value: "salado-comidas", label: "Comidas" },
+      { value: "salado-salsas", label: "Sopas y salsas" },
+      { value: "salado-tortillas", label: "Tortillas" },
+      { value: "salado-tartas", label: "Tartas saladas" },
+      { value: "salado-carnes", label: "Carnes" },
+      { value: "salado-aves", label: "Aves" },
+      { value: "salado-pescados", label: "Pescados" },
+      { value: "salado-basicos", label: "Masas saladas" },
       { value: "salado-entradas", label: "Entradas y snacks" },
-      { value: "salado-salsas", label: "Salsas y aderezos" },
-      { value: "salado-basicos", label: "Masas y básicos", chip: "Masas saladas" },
     ],
   },
   {
-    label: "Dulce",
+    key: "dulce",
+    label: "Recetas dulces",
+    navLabel: "Recetas Dulces",
     items: [
-      { value: "dulce-tortas", label: "Tortas y budines" },
       { value: "dulce-postres", label: "Postres" },
-      { value: "dulce-galletitas", label: "Galletitas y alfajores" },
+      { value: "dulce-tortas", label: "Tortas y budines" },
+      { value: "dulce-basicos", label: "Masas dulces" },
       { value: "dulce-salsas", label: "Salsas y cremas" },
-      { value: "dulce-basicos", label: "Masas y básicos", chip: "Masas dulces" },
     ],
   },
   {
-    label: "Otros",
+    key: "otros",
+    label: "Otras recetas",
+    navLabel: "Otras Recetas",
     items: [
       { value: "otros-panes", label: "Panes y facturas" },
-      { value: "otros-bebidas", label: "Bebidas" },
+      { value: "dulce-galletitas", label: "Galletitas y alfajores" },
     ],
   },
 ];
@@ -48,7 +58,7 @@ export const CATEGORY_VALUES = CATEGORY_GROUPS.flatMap((g) =>
   g.items.map((i) => i.value)
 ) as [string, ...string[]];
 
-/** "dulce-tortas" -> "Dulce · Tortas y budines" (null si el slug no existe) */
+/** "dulce-tortas" -> "Recetas dulces · Tortas y budines" (null si el slug no existe) */
 export function categoryLabel(value: string | null | undefined): string | null {
   if (!value) return null;
   for (const group of CATEGORY_GROUPS) {
@@ -56,11 +66,6 @@ export function categoryLabel(value: string | null | undefined): string | null {
     if (item) return `${group.label} · ${item.label}`;
   }
   return null;
-}
-
-/** Etiqueta corta para chips: usa `chip` si existe, si no `label` */
-export function categoryChipLabel(item: CategoryItem): string {
-  return item.chip ?? item.label;
 }
 
 /** Solo el nombre de la subcategoría: "dulce-tortas" -> "Tortas y budines" */

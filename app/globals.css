@@ -4,7 +4,7 @@
 
 /* Tema Chimichurri — estilo Luma (tokens shadcn en oklch), oscuro por defecto */
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0 0); /* #fafafa */
   --foreground: oklch(0.147 0.004 49.25);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.147 0.004 49.25);
