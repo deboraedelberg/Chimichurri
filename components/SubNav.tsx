@@ -84,8 +84,7 @@ function GroupMenu({ group }: { group: CategoryGroup }) {
             {group.items.map((item) => (
               <Link
                 key={item.value}
-                href={`/?categoria=${item.value}`}
-                scroll={false}
+                href={`/categoria/${item.value}`}
                 onClick={closeNow}
                 className="block rounded-sm px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
               >

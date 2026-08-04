@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecipeCard } from "@/components/RecipeCard";
-import { CategoryChips } from "@/components/CategoryChips";
 
 export const dynamic = "force-dynamic";
 
@@ -61,8 +60,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </Link>
         </Button>
       </div>
-
-      <CategoryChips q={q} categoria={categoria} />
 
       {etiqueta && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
