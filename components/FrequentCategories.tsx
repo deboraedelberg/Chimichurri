@@ -8,9 +8,9 @@ export function FrequentCategories({ categories }: { categories: FrequentCategor
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold text-muted-foreground">
+      <h3 className="text-lg font-semibold text-foreground">
         Categorías más frecuentes
-      </h2>
+      </h3>
       <div className="grid grid-cols-3 gap-x-4 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
         {categories.map((cat) => (
           <Link
@@ -18,7 +18,7 @@ export function FrequentCategories({ categories }: { categories: FrequentCategor
             href={`/categoria/${cat.category}`}
             className="group flex flex-col items-center gap-2 text-center"
           >
-            <div className="aspect-square w-full overflow-hidden rounded-full bg-muted ring-1 ring-border transition-transform group-hover:scale-[1.03]">
+            <div className="aspect-square w-2/3 overflow-hidden rounded-full bg-muted ring-1 ring-border transition-transform group-hover:scale-[1.03]">
               {cat.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

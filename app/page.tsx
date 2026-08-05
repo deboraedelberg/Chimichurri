@@ -98,9 +98,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </Card>
         ) : (
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground">
+            <h3 className="text-lg font-semibold text-foreground">
               Últimas recetas subidas
-            </h2>
+            </h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {latestRecipes.map((recipe) => (
                 <RecipeCard key={recipe.id} recipe={toRecipeDTO(recipe)} />
