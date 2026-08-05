@@ -106,7 +106,7 @@ export function SubNav() {
   if (!session?.user) return null;
 
   return (
-    <nav className="w-full border-b bg-background shadow-sm">
+    <nav className="w-full border-b bg-card shadow-sm">
       <div className="container">
         <div className="no-scrollbar flex items-center gap-1 overflow-x-auto py-1">
           <span

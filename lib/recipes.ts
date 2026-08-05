@@ -89,7 +89,7 @@ export function parseEtiqueta(
 
 export interface FrequentCategory {
   category: string;
-  viewCount: number;
+  count: number;
   recipeId: string;
   recipeName: string;
   photoUrl: string | null;
@@ -129,13 +129,52 @@ export async function getFrequentCategories(
       )[0];
       return {
         category,
-        viewCount: total,
+        count: total,
         recipeId: topRecipeId,
         recipeName: top.name,
         photoUrl: top.photoUrl,
       };
     })
-    .sort((a, b) => b.viewCount - a.viewCount)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/**
+ * Categorías con más recetas cargadas en total (sin importar quién las
+ * abrió). Se usa como respaldo cuando el usuario todavía no tiene
+ * aperturas registradas. Cada categoría se representa con su receta
+ * más reciente.
+ */
+export async function getTopCategoriesByRecipeCount(
+  limit = 5
+): Promise<FrequentCategory[]> {
+  const recipes = await prisma.recipe.findMany({
+    where: { category: { not: null } },
+    select: { id: true, name: true, category: true, photo_url: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const byCategory = new Map<string, { count: number; recipeId: string; recipeName: string; photoUrl: string | null }>();
+  for (const recipe of recipes) {
+    const category = recipe.category!;
+    const existing = byCategory.get(category);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      // Las recetas vienen ordenadas por fecha desc: la primera que
+      // aparece para esta categoría es la más reciente.
+      byCategory.set(category, {
+        count: 1,
+        recipeId: recipe.id,
+        recipeName: recipe.name,
+        photoUrl: recipe.photo_url,
+      });
+    }
+  }
+
+  return [...byCategory.entries()]
+    .map(([category, v]) => ({ category, ...v }))
+    .sort((a, b) => b.count - a.count)
     .slice(0, limit);
 }
 

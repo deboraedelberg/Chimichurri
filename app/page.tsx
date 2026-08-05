@@ -8,6 +8,7 @@ import {
   RECIPE_INCLUDE,
   buildRecipeWhere,
   getFrequentCategories,
+  getTopCategoriesByRecipeCount,
   parseCategoria,
   parseEtiqueta,
 } from "@/lib/recipes";
@@ -50,7 +51,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   // Sin filtros: dashboard con categorías frecuentes + últimas recetas
   if (!hasFilters) {
-    const [frequentCategories, latestRecipes] = await Promise.all([
+    const [userCategories, latestRecipes] = await Promise.all([
       getFrequentCategories(session.user.id),
       prisma.recipe.findMany({
         include: RECIPE_INCLUDE,
@@ -58,6 +59,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         take: 4,
       }),
     ]);
+    // Usuario sin aperturas todavía: mostramos las categorías con más recetas
+    const frequentCategories =
+      userCategories.length > 0 ? userCategories : await getTopCategoriesByRecipeCount(5);
 
     return (
       <main className="container space-y-10 py-8">
