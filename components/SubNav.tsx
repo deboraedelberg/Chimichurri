@@ -178,9 +178,6 @@ export function SubNav() {
           >
             Favoritas
           </span>
-          <Link href="/categoria/sin-categoria" className={navLinkClass}>
-            Sin categoría
-          </Link>
 
           <div className="md:hidden">
             <AllCategoriesMenu />
