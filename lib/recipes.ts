@@ -21,8 +21,17 @@ export const stepSchema = z.object({
 export const recipeSchema = z.object({
   name: z.string().trim().min(1, "El nombre es obligatorio").max(200),
   description: z.string().trim().max(2000).nullish(),
-  photo_url: z.string().trim().url().nullish().or(z.literal("").transform(() => null)),
-  category: z.enum(CATEGORY_VALUES).nullish(),
+  photo_url: z
+    .string({
+      required_error: "La foto es obligatoria",
+      invalid_type_error: "La foto es obligatoria",
+    })
+    .trim()
+    .url("La foto es obligatoria"),
+  category: z.enum(CATEGORY_VALUES, {
+    required_error: "La categoría es obligatoria",
+    invalid_type_error: "La categoría es obligatoria",
+  }),
   credit: z.string().trim().max(100).nullish().or(z.literal("").transform(() => null)),
   servings: z.coerce.number().int().min(1).max(100).default(4),
   servings_unit: z.enum(["porciones", "unidades"]).default("porciones"),

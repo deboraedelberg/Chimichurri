@@ -297,8 +297,26 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
     if (recipe.sourceUrl) appendNotes(`Fuente: ${recipe.sourceUrl}`);
   }
 
+  /** Campos obligatorios: nombre, categoría, foto, rinde, 1+ ingrediente, 1+ paso. */
+  function validateForm(): string | null {
+    if (!name.trim()) return "El nombre es obligatorio";
+    if (!category) return "La categoría es obligatoria";
+    if (!photoUrl) return "La foto es obligatoria";
+    if (!servings || Number(servings) < 1) return "Rinde es obligatorio";
+    const hasIngredient = ingredients.some((row) => !row.heading && row.item.trim());
+    if (!hasIngredient) return "Agrega al menos un ingrediente";
+    const hasStep = steps.some((row) => !row.heading && row.content.trim());
+    if (!hasStep) return "Agrega al menos un paso";
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -308,7 +326,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
       photo_url: photoUrl,
       category: category || null,
       credit: credit.trim() || null,
-      servings: Number(servings) || 4,
+      servings: Number(servings),
       servings_unit: servingsUnit,
       prepTime: prepTime ? Number(prepTime) : null,
       cookTime: cookTime ? Number(cookTime) : null,
@@ -374,7 +392,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="recipe-category">Categoría</Label>
+            <Label htmlFor="recipe-category">Categoría *</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="recipe-category" aria-label="Categoría">
                 <SelectValue placeholder="Elegir categoría" />
@@ -429,7 +447,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="recipe-servings">Rinde</Label>
+              <Label htmlFor="recipe-servings">Rinde *</Label>
               <div className="flex gap-2">
                 <Input
                   id="recipe-servings"
@@ -452,7 +470,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="recipe-prep">Preparación (min)</Label>
+              <Label htmlFor="recipe-prep">Preparación (min, opcional)</Label>
               <Input
                 id="recipe-prep"
                 type="number"
@@ -463,7 +481,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="recipe-cook">Cocción (min)</Label>
+              <Label htmlFor="recipe-cook">Cocción (min, opcional)</Label>
               <Input
                 id="recipe-cook"
                 type="number"
@@ -476,7 +494,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipe-tags">Etiquetas</Label>
+            <Label htmlFor="recipe-tags">Etiquetas (opcional)</Label>
             <TagInput
               id="recipe-tags"
               value={tagList}
@@ -501,7 +519,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Foto</Label>
+            <Label>Foto *</Label>
             <PhotoUploader
               photoUrl={photoUrl}
               onPhotoChange={setPhotoUrl}
