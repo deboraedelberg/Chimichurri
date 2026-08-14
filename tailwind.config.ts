@@ -96,6 +96,11 @@ const config: Config = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      // Tailwind no trae `invalid` en el set de variantes `aria-*` por
+      // defecto — sin esto, aria-invalid:* se descarta en silencio al compilar.
+      aria: {
+        invalid: 'invalid="true"',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

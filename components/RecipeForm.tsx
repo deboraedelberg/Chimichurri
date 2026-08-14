@@ -171,6 +171,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
   const [defaultUnit, setDefaultUnit] = useState("g");
 
   // En recetas nuevas, aplicar las preferencias de Configuración
@@ -297,26 +298,27 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
     if (recipe.sourceUrl) appendNotes(`Fuente: ${recipe.sourceUrl}`);
   }
 
-  /** Campos obligatorios: nombre, categoría, foto, rinde, 1+ ingrediente, 1+ paso. */
-  function validateForm(): string | null {
-    if (!name.trim()) return "El nombre es obligatorio";
-    if (!category) return "La categoría es obligatoria";
-    if (!photoUrl) return "La foto es obligatoria";
-    if (!servings || Number(servings) < 1) return "Rinde es obligatorio";
-    const hasIngredient = ingredients.some((row) => !row.heading && row.item.trim());
-    if (!hasIngredient) return "Agrega al menos un ingrediente";
-    const hasStep = steps.some((row) => !row.heading && row.content.trim());
-    if (!hasStep) return "Agrega al menos un paso";
-    return null;
-  }
+  // Campos obligatorios: nombre, categoría, foto, rinde, 1+ ingrediente, 1+ paso.
+  // Se recalcula en cada render así el error desaparece solo apenas se corrige.
+  const fieldErrors = {
+    name: !name.trim() ? "El nombre es obligatorio" : undefined,
+    category: !category ? "La categoría es obligatoria" : undefined,
+    photo: !photoUrl ? "La foto es obligatoria" : undefined,
+    servings:
+      !servings || Number(servings) < 1 ? "Rinde es obligatorio" : undefined,
+    ingredients: !ingredients.some((row) => !row.heading && row.item.trim())
+      ? "Agrega al menos un ingrediente"
+      : undefined,
+    steps: !steps.some((row) => !row.heading && row.content.trim())
+      ? "Agrega al menos un paso"
+      : undefined,
+  };
+  const hasFieldErrors = Object.values(fieldErrors).some(Boolean);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+    setShowErrors(true);
+    if (hasFieldErrors) return;
     setSubmitting(true);
     setError(null);
 
@@ -392,9 +394,18 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="recipe-category">Categoría *</Label>
+            <Label
+              htmlFor="recipe-category"
+              className={cn(showErrors && fieldErrors.category && "text-destructive")}
+            >
+              Categoría *
+            </Label>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger id="recipe-category" aria-label="Categoría">
+              <SelectTrigger
+                id="recipe-category"
+                aria-label="Categoría"
+                aria-invalid={showErrors && !!fieldErrors.category}
+              >
                 <SelectValue placeholder="Elegir categoría" />
               </SelectTrigger>
               <SelectContent>
@@ -410,17 +421,28 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                 ))}
               </SelectContent>
             </Select>
+            {showErrors && fieldErrors.category && (
+              <p className="text-sm text-destructive">{fieldErrors.category}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipe-name">Nombre *</Label>
+            <Label
+              htmlFor="recipe-name"
+              className={cn(showErrors && fieldErrors.name && "text-destructive")}
+            >
+              Nombre *
+            </Label>
             <Input
               id="recipe-name"
-              required
               placeholder="Empanadas de la abuela"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              aria-invalid={showErrors && !!fieldErrors.name}
             />
+            {showErrors && fieldErrors.name && (
+              <p className="text-sm text-destructive">{fieldErrors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -447,7 +469,12 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="recipe-servings">Rinde *</Label>
+              <Label
+                htmlFor="recipe-servings"
+                className={cn(showErrors && fieldErrors.servings && "text-destructive")}
+              >
+                Rinde *
+              </Label>
               <div className="flex gap-2">
                 <Input
                   id="recipe-servings"
@@ -457,6 +484,7 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                   className="w-24 shrink-0"
                   value={servings}
                   onChange={(e) => setServings(e.target.value)}
+                  aria-invalid={showErrors && !!fieldErrors.servings}
                 />
                 <Select value={servingsUnit} onValueChange={setServingsUnit}>
                   <SelectTrigger aria-label="Tipo de rinde" className="min-w-0 flex-1">
@@ -468,6 +496,9 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
                   </SelectContent>
                 </Select>
               </div>
+              {showErrors && fieldErrors.servings && (
+                <p className="text-sm text-destructive">{fieldErrors.servings}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="recipe-prep">Preparación (min, opcional)</Label>
@@ -519,12 +550,24 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Foto *</Label>
-            <PhotoUploader
-              photoUrl={photoUrl}
-              onPhotoChange={setPhotoUrl}
-              aiPrompt={name}
-            />
+            <Label className={cn(showErrors && fieldErrors.photo && "text-destructive")}>
+              Foto *
+            </Label>
+            <div
+              className={cn(
+                "rounded-lg",
+                showErrors && fieldErrors.photo && "ring-2 ring-destructive/50"
+              )}
+            >
+              <PhotoUploader
+                photoUrl={photoUrl}
+                onPhotoChange={setPhotoUrl}
+                aiPrompt={name}
+              />
+            </div>
+            {showErrors && fieldErrors.photo && (
+              <p className="text-sm text-destructive">{fieldErrors.photo}</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -678,6 +721,9 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           <p className="text-xs text-muted-foreground">
             Tip: Enter agrega el siguiente ingrediente.
           </p>
+          {showErrors && fieldErrors.ingredients && (
+            <p className="text-sm text-destructive">{fieldErrors.ingredients}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -857,6 +903,9 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           <p className="text-xs text-muted-foreground">
             Tip: Enter agrega el siguiente paso; Shift+Enter hace un salto de línea.
           </p>
+          {showErrors && fieldErrors.steps && (
+            <p className="text-sm text-destructive">{fieldErrors.steps}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -900,7 +949,11 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
         </Card>
       )}
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {(error || (showErrors && hasFieldErrors)) && (
+        <p className="text-sm text-destructive">
+          {error ?? "Revisá los campos marcados en rojo"}
+        </p>
+      )}
 
       <div className="flex gap-3">
         <Button type="submit" disabled={submitting} className="flex-1 sm:flex-none sm:px-12">
