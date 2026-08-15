@@ -298,12 +298,11 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
     if (recipe.sourceUrl) appendNotes(`Fuente: ${recipe.sourceUrl}`);
   }
 
-  // Campos obligatorios: nombre, categoría, foto, rinde, 1+ ingrediente, 1+ paso.
+  // Campos obligatorios: nombre, categoría, rinde, 1+ ingrediente, 1+ paso.
   // Se recalcula en cada render así el error desaparece solo apenas se corrige.
   const fieldErrors = {
     name: !name.trim() ? "El nombre es obligatorio" : undefined,
     category: !category ? "La categoría es obligatoria" : undefined,
-    photo: !photoUrl ? "La foto es obligatoria" : undefined,
     servings:
       !servings || Number(servings) < 1 ? "Rinde es obligatorio" : undefined,
     ingredients: !ingredients.some((row) => !row.heading && row.item.trim())
@@ -550,31 +549,26 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className={cn(showErrors && fieldErrors.photo && "text-destructive")}>
-              Foto *
-            </Label>
-            <div
-              className={cn(
-                "rounded-lg",
-                showErrors && fieldErrors.photo && "ring-2 ring-destructive/50"
-              )}
-            >
-              <PhotoUploader
-                photoUrl={photoUrl}
-                onPhotoChange={setPhotoUrl}
-                aiPrompt={name}
-              />
-            </div>
-            {showErrors && fieldErrors.photo && (
-              <p className="text-sm text-destructive">{fieldErrors.photo}</p>
-            )}
+            <Label>Foto (opcional)</Label>
+            <PhotoUploader
+              photoUrl={photoUrl}
+              onPhotoChange={setPhotoUrl}
+              aiPrompt={name}
+            />
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Ingredientes</CardTitle>
+          <CardTitle
+            className={cn(
+              "text-lg",
+              showErrors && fieldErrors.ingredients && "text-destructive"
+            )}
+          >
+            Ingredientes
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {ingredients.map((row, i) =>
@@ -749,7 +743,14 @@ export function RecipeForm({ mode, initial, knownTags = [] }: RecipeFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Pasos</CardTitle>
+          <CardTitle
+            className={cn(
+              "text-lg",
+              showErrors && fieldErrors.steps && "text-destructive"
+            )}
+          >
+            Pasos
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {(() => {

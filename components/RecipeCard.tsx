@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock, User, Users, UtensilsCrossed } from "@/components/icons";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { RecipeCardMenu } from "@/components/RecipeCardMenu";
@@ -16,19 +17,19 @@ export function RecipeCard({ recipe }: { recipe: RecipeDTO }) {
     <Link href={`/recipes/${recipe.id}`} className="group block">
       <Card className="h-full overflow-hidden transition-colors hover:border-primary/50">
         <div className="relative aspect-video w-full overflow-hidden bg-muted">
-          {recipe.photo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={recipe.photo_url}
-              alt={recipe.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+          <Avatar className="h-full w-full rounded-none">
+            {recipe.photo_url && (
+              <AvatarImage
+                src={recipe.photo_url}
+                alt={recipe.name}
+                className="transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+            )}
+            <AvatarFallback className="rounded-none">
               <UtensilsCrossed className="h-10 w-10 opacity-40" />
-            </div>
-          )}
+            </AvatarFallback>
+          </Avatar>
           {category && (
             <Badge variant="secondary" className="absolute left-2 top-2">
               {category}

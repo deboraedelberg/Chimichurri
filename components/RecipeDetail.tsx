@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChefHat, Clock, Loader2, Pencil, Trash2 } from "@/components/icons";
+import { ChefHat, Clock, Loader2, Pencil, Trash2, UtensilsCrossed } from "@/components/icons";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,16 +46,12 @@ export function RecipeDetail({ recipe }: { recipe: RecipeDTO }) {
 
   return (
     <div className="space-y-6">
-      {recipe.photo_url && (
-        <div className="aspect-video w-full overflow-hidden rounded-lg border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={recipe.photo_url}
-            alt={recipe.name}
-            className="h-full w-full object-cover"
-          />
-        </div>
-      )}
+      <Avatar className="aspect-video h-auto w-full rounded-lg border">
+        {recipe.photo_url && <AvatarImage src={recipe.photo_url} alt={recipe.name} />}
+        <AvatarFallback className="rounded-none">
+          <UtensilsCrossed className="h-12 w-12 opacity-40" />
+        </AvatarFallback>
+      </Avatar>
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
